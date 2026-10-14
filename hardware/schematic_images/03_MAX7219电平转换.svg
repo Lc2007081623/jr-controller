@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="2200" viewBox="0 0 1600 1100">
+<rect width="1600" height="1100" fill="white"/>
+<rect x="30" y="25" width="1540" height="1045" fill="none" stroke="#637180" stroke-width="2"/>
+<text x="60" y="77" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#192b3d">JR 单手柄控制器 / MAX7219 接口与电平转换</text>
+<text x="60" y="113" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#637180">U1 = SN74AHCT125D（SOIC-14），VCC=5V；不要替换为 HC / AHC125。</text>
+<line x1="55" y1="132" x2="1545" y2="132" stroke="#637180" stroke-width="2"/>
+<line x1="55" y1="1020" x2="1545" y2="1020" stroke="#637180" stroke-width="2"/>
+<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A0 · 2026-10-14 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
+<text x="1400" y="1053" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#637180">03 / 05</text>
+<rect x="600" y="220" width="330" height="650" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="620" y="262" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="bold" fill="#192b3d">U1  SN74AHCT125D</text>
+<text x="640" y="293" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#1458a0">3.3V 输入 → 5V 输出</text>
+<text x="100" y="343" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_DIN_3V3</text>
+<line x1="120" y1="350" x2="600" y2="350" stroke="#14734a" stroke-width="2"/>
+<text x="611" y="355" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">2   1A</text>
+<text x="830" y="355" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">1Y   3</text>
+<line x1="930" y1="350" x2="1080" y2="350" stroke="#14734a" stroke-width="2"/>
+<text x="965" y="343" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_DIN_5V</text>
+<circle cx="385" cy="350" r="3" fill="#14734a"/>
+<line x1="385" y1="350" x2="385" y2="365" stroke="#14734a" stroke-width="2"/>
+<line x1="385" y1="365" x2="385" y2="376" stroke="#14734a" stroke-width="2"/>
+<rect x="378" y="376" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="385" y1="414" x2="385" y2="425" stroke="#14734a" stroke-width="2"/>
+<text x="398" y="388" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R41</text>
+<text x="398" y="410" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<line x1="385" y1="425" x2="385" y2="435" stroke="#14734a" stroke-width="2"/>
+<line x1="371" y1="435" x2="399" y2="435" stroke="#14734a" stroke-width="2"/>
+<line x1="376" y1="441" x2="394" y2="441" stroke="#14734a" stroke-width="2"/>
+<line x1="381" y1="447" x2="389" y2="447" stroke="#14734a" stroke-width="2"/>
+<text x="100" y="468" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_CLK_3V3</text>
+<line x1="120" y1="475" x2="600" y2="475" stroke="#14734a" stroke-width="2"/>
+<text x="611" y="480" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">5   2A</text>
+<text x="830" y="480" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">2Y   6</text>
+<line x1="930" y1="475" x2="1080" y2="475" stroke="#14734a" stroke-width="2"/>
+<text x="965" y="468" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_CLK_5V</text>
+<circle cx="385" cy="475" r="3" fill="#14734a"/>
+<line x1="385" y1="475" x2="385" y2="490" stroke="#14734a" stroke-width="2"/>
+<line x1="385" y1="490" x2="385" y2="501" stroke="#14734a" stroke-width="2"/>
+<rect x="378" y="501" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="385" y1="539" x2="385" y2="550" stroke="#14734a" stroke-width="2"/>
+<text x="398" y="513" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R42</text>
+<text x="398" y="535" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<line x1="385" y1="550" x2="385" y2="560" stroke="#14734a" stroke-width="2"/>
+<line x1="371" y1="560" x2="399" y2="560" stroke="#14734a" stroke-width="2"/>
+<line x1="376" y1="566" x2="394" y2="566" stroke="#14734a" stroke-width="2"/>
+<line x1="381" y1="572" x2="389" y2="572" stroke="#14734a" stroke-width="2"/>
+<text x="100" y="593" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_CS_3V3</text>
+<line x1="120" y1="600" x2="600" y2="600" stroke="#14734a" stroke-width="2"/>
+<text x="611" y="605" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">9   3A</text>
+<text x="830" y="605" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">3Y   8</text>
+<line x1="930" y1="600" x2="1080" y2="600" stroke="#14734a" stroke-width="2"/>
+<text x="965" y="593" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_CS_5V</text>
+<circle cx="385" cy="600" r="3" fill="#14734a"/>
+<line x1="385" y1="600" x2="385" y2="615" stroke="#14734a" stroke-width="2"/>
+<line x1="385" y1="615" x2="385" y2="626" stroke="#14734a" stroke-width="2"/>
+<rect x="378" y="626" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="385" y1="664" x2="385" y2="675" stroke="#14734a" stroke-width="2"/>
+<text x="398" y="638" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R43</text>
+<text x="398" y="660" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<line x1="385" y1="675" x2="385" y2="685" stroke="#14734a" stroke-width="2"/>
+<line x1="371" y1="685" x2="399" y2="685" stroke="#14734a" stroke-width="2"/>
+<line x1="376" y1="691" x2="394" y2="691" stroke="#14734a" stroke-width="2"/>
+<line x1="381" y1="697" x2="389" y2="697" stroke="#14734a" stroke-width="2"/>
+<line x1="540" y1="710" x2="600" y2="710" stroke="#14734a" stroke-width="2"/>
+<line x1="540" y1="710" x2="540" y2="720" stroke="#14734a" stroke-width="2"/>
+<line x1="526" y1="720" x2="554" y2="720" stroke="#14734a" stroke-width="2"/>
+<line x1="531" y1="726" x2="549" y2="726" stroke="#14734a" stroke-width="2"/>
+<line x1="536" y1="732" x2="544" y2="732" stroke="#14734a" stroke-width="2"/>
+<text x="613" y="715" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">1   1OE#</text>
+<line x1="540" y1="760" x2="600" y2="760" stroke="#14734a" stroke-width="2"/>
+<line x1="540" y1="760" x2="540" y2="770" stroke="#14734a" stroke-width="2"/>
+<line x1="526" y1="770" x2="554" y2="770" stroke="#14734a" stroke-width="2"/>
+<line x1="531" y1="776" x2="549" y2="776" stroke="#14734a" stroke-width="2"/>
+<line x1="536" y1="782" x2="544" y2="782" stroke="#14734a" stroke-width="2"/>
+<text x="613" y="765" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">4   2OE#</text>
+<line x1="540" y1="810" x2="600" y2="810" stroke="#14734a" stroke-width="2"/>
+<line x1="540" y1="810" x2="540" y2="820" stroke="#14734a" stroke-width="2"/>
+<line x1="526" y1="820" x2="554" y2="820" stroke="#14734a" stroke-width="2"/>
+<line x1="531" y1="826" x2="549" y2="826" stroke="#14734a" stroke-width="2"/>
+<line x1="536" y1="832" x2="544" y2="832" stroke="#14734a" stroke-width="2"/>
+<text x="613" y="815" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">10   3OE#</text>
+<line x1="750" y1="175" x2="750" y2="220" stroke="#14734a" stroke-width="2"/>
+<text x="690" y="168" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<text x="760" y="217" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">14 VCC</text>
+<line x1="750" y1="870" x2="750" y2="900" stroke="#14734a" stroke-width="2"/>
+<line x1="750" y1="900" x2="750" y2="910" stroke="#14734a" stroke-width="2"/>
+<line x1="736" y1="910" x2="764" y2="910" stroke="#14734a" stroke-width="2"/>
+<line x1="741" y1="916" x2="759" y2="916" stroke="#14734a" stroke-width="2"/>
+<line x1="746" y1="922" x2="754" y2="922" stroke="#14734a" stroke-width="2"/>
+<text x="760" y="889" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">7 GND</text>
+<line x1="1050" y1="185" x2="1050" y2="215" stroke="#14734a" stroke-width="2"/>
+<line x1="1035" y1="215" x2="1065" y2="215" stroke="#14734a" stroke-width="2"/>
+<line x1="1035" y1="225" x2="1065" y2="225" stroke="#14734a" stroke-width="2"/>
+<line x1="1050" y1="225" x2="1050" y2="255" stroke="#14734a" stroke-width="2"/>
+<text x="1072" y="214" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C7</text>
+<text x="1072" y="236" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">100nF</text>
+<text x="1010" y="173" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<line x1="1050" y1="181" x2="1050" y2="185" stroke="#14734a" stroke-width="2"/>
+<line x1="1050" y1="255" x2="1050" y2="265" stroke="#14734a" stroke-width="2"/>
+<line x1="1036" y1="265" x2="1064" y2="265" stroke="#14734a" stroke-width="2"/>
+<line x1="1041" y1="271" x2="1059" y2="271" stroke="#14734a" stroke-width="2"/>
+<line x1="1046" y1="277" x2="1054" y2="277" stroke="#14734a" stroke-width="2"/>
+<text x="1320" y="300" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">J5</text>
+<text x="1320" y="324" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">接 HS-F13A 输入侧</text>
+<rect x="1340" y="333" width="58" height="174" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="1315" y1="350" x2="1355" y2="350" stroke="#14734a" stroke-width="2"/>
+<rect x="1355" y="346" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1371" y="352" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">1</text>
+<line x1="1315" y1="385" x2="1355" y2="385" stroke="#14734a" stroke-width="2"/>
+<rect x="1355" y="381" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1371" y="387" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">2</text>
+<line x1="1315" y1="420" x2="1355" y2="420" stroke="#14734a" stroke-width="2"/>
+<rect x="1355" y="416" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1371" y="422" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">3</text>
+<line x1="1315" y1="455" x2="1355" y2="455" stroke="#14734a" stroke-width="2"/>
+<rect x="1355" y="451" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1371" y="457" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">4</text>
+<line x1="1315" y1="490" x2="1355" y2="490" stroke="#14734a" stroke-width="2"/>
+<rect x="1355" y="486" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1371" y="492" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">5</text>
+<line x1="1315" y1="350" x2="1170" y2="350" stroke="#14734a" stroke-width="2"/>
+<text x="1150" y="343" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<line x1="1315" y1="385" x2="1170" y2="385" stroke="#14734a" stroke-width="2"/>
+<text x="1150" y="378" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">GND</text>
+<line x1="1315" y1="420" x2="1170" y2="420" stroke="#14734a" stroke-width="2"/>
+<text x="1150" y="413" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_DIN_5V</text>
+<line x1="1315" y1="455" x2="1170" y2="455" stroke="#14734a" stroke-width="2"/>
+<text x="1150" y="448" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_CLK_5V</text>
+<line x1="1315" y1="490" x2="1170" y2="490" stroke="#14734a" stroke-width="2"/>
+<text x="1150" y="483" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">DISP_CS_5V</text>
+<text x="1110" y="580" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#b53b32">模块实物针序可能不同，</text>
+<text x="1110" y="606" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#b53b32">按 VCC/GND/DIN/CLK/CS 接线。</text>
+<text x="1110" y="642" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#192b3d">模块 DOUT 留空，不接回 S3。</text>
+<text x="1110" y="708" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">U1 第四路（未用）：</text>
+<text x="840" y="743" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">13</text>
+<line x1="930" y1="740" x2="1050" y2="740" stroke="#14734a" stroke-width="2"/>
+<text x="1060" y="733" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<text x="840" y="793" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">12</text>
+<line x1="930" y1="790" x2="1050" y2="790" stroke="#14734a" stroke-width="2"/>
+<text x="1060" y="783" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">GND</text>
+<text x="840" y="843" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">11</text>
+<line x1="930" y1="840" x2="1050" y2="840" stroke="#14734a" stroke-width="2"/>
+<line x1="1044" y1="834" x2="1056" y2="846" stroke="#b53b32" stroke-width="2"/>
+<line x1="1044" y1="846" x2="1056" y2="834" stroke="#b53b32" stroke-width="2"/>
+<text x="1065" y="843" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">4Y 不连接</text>
+<text x="85" y="958" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">OE# 接地启用前三路；未用 4OE# 接5V禁用，4A接地。C7 靠近 U1 的14/7脚。</text>
+<text x="85" y="994" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#637180">输入默认下拉；固件先设置 DIN/CLK/CS，再初始化 MAX7219：关闭测试、清屏、低亮度、全8行扫描。</text>
+</svg>

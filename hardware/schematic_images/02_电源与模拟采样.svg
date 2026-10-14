@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="2200" viewBox="0 0 1600 1100">
+<rect width="1600" height="1100" fill="white"/>
+<rect x="30" y="25" width="1540" height="1045" fill="none" stroke="#637180" stroke-width="2"/>
+<text x="60" y="77" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#192b3d">JR 单手柄控制器 / 显示电源与两路模拟采样</text>
+<text x="60" y="113" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#637180">显示独立 5V 电源；主控仍由原生 USB 供电。只共地，不合并正电源。</text>
+<line x1="55" y1="132" x2="1545" y2="132" stroke="#637180" stroke-width="2"/>
+<line x1="55" y1="1020" x2="1545" y2="1020" stroke="#637180" stroke-width="2"/>
+<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A0 · 2026-10-14 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
+<text x="1400" y="1053" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#637180">02 / 05</text>
+<text x="170" y="190" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">J90</text>
+<text x="170" y="214" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">显示电源输入</text>
+<rect x="190" y="223" width="58" height="69" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="165" y1="240" x2="205" y2="240" stroke="#14734a" stroke-width="2"/>
+<rect x="205" y="236" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="221" y="242" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">1</text>
+<line x1="165" y1="275" x2="205" y2="275" stroke="#14734a" stroke-width="2"/>
+<rect x="205" y="271" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="221" y="277" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">2</text>
+<line x1="165" y1="240" x2="105" y2="240" stroke="#14734a" stroke-width="2"/>
+<text x="65" y="229" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<line x1="165" y1="275" x2="125" y2="275" stroke="#14734a" stroke-width="2"/>
+<line x1="125" y1="275" x2="125" y2="285" stroke="#14734a" stroke-width="2"/>
+<line x1="111" y1="285" x2="139" y2="285" stroke="#14734a" stroke-width="2"/>
+<line x1="116" y1="291" x2="134" y2="291" stroke="#14734a" stroke-width="2"/>
+<line x1="121" y1="297" x2="129" y2="297" stroke="#14734a" stroke-width="2"/>
+<line x1="430" y1="220" x2="430" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="415" y1="250" x2="445" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="415" y1="260" x2="445" y2="260" stroke="#14734a" stroke-width="2"/>
+<line x1="430" y1="260" x2="430" y2="290" stroke="#14734a" stroke-width="2"/>
+<text x="452" y="249" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C1</text>
+<text x="452" y="271" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">10uF</text>
+<text x="400" y="202" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<line x1="430" y1="211" x2="430" y2="220" stroke="#14734a" stroke-width="2"/>
+<line x1="430" y1="290" x2="430" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="416" y1="300" x2="444" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="421" y1="306" x2="439" y2="306" stroke="#14734a" stroke-width="2"/>
+<line x1="426" y1="312" x2="434" y2="312" stroke="#14734a" stroke-width="2"/>
+<line x1="650" y1="220" x2="650" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="635" y1="250" x2="665" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="635" y1="260" x2="665" y2="260" stroke="#14734a" stroke-width="2"/>
+<line x1="650" y1="260" x2="650" y2="290" stroke="#14734a" stroke-width="2"/>
+<text x="672" y="249" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C2</text>
+<text x="672" y="271" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">100nF</text>
+<text x="620" y="202" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<line x1="650" y1="211" x2="650" y2="220" stroke="#14734a" stroke-width="2"/>
+<line x1="650" y1="290" x2="650" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="636" y1="300" x2="664" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="641" y1="306" x2="659" y2="306" stroke="#14734a" stroke-width="2"/>
+<line x1="646" y1="312" x2="654" y2="312" stroke="#14734a" stroke-width="2"/>
+<line x1="1000" y1="220" x2="1000" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="985" y1="250" x2="1015" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="985" y1="260" x2="1015" y2="260" stroke="#14734a" stroke-width="2"/>
+<line x1="1000" y1="260" x2="1000" y2="290" stroke="#14734a" stroke-width="2"/>
+<text x="1022" y="249" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C3</text>
+<text x="1022" y="271" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">1uF</text>
+<text x="970" y="202" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="1000" y1="211" x2="1000" y2="220" stroke="#14734a" stroke-width="2"/>
+<line x1="1000" y1="290" x2="1000" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="986" y1="300" x2="1014" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="991" y1="306" x2="1009" y2="306" stroke="#14734a" stroke-width="2"/>
+<line x1="996" y1="312" x2="1004" y2="312" stroke="#14734a" stroke-width="2"/>
+<line x1="1240" y1="220" x2="1240" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="1225" y1="250" x2="1255" y2="250" stroke="#14734a" stroke-width="2"/>
+<line x1="1225" y1="260" x2="1255" y2="260" stroke="#14734a" stroke-width="2"/>
+<line x1="1240" y1="260" x2="1240" y2="290" stroke="#14734a" stroke-width="2"/>
+<text x="1262" y="249" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C4</text>
+<text x="1262" y="271" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">100nF</text>
+<text x="1210" y="202" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="1240" y1="211" x2="1240" y2="220" stroke="#14734a" stroke-width="2"/>
+<line x1="1240" y1="290" x2="1240" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="1226" y1="300" x2="1254" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="1231" y1="306" x2="1249" y2="306" stroke="#14734a" stroke-width="2"/>
+<line x1="1236" y1="312" x2="1244" y2="312" stroke="#14734a" stroke-width="2"/>
+<text x="85" y="349" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#b53b32">+3V3 来自主控板 J1.1 / J1.2；GND 在全系统互连。J90 使用稳定的 5V，不接 3.3V。</text>
+<text x="85" y="398" font-family="Microsoft YaHei, sans-serif" font-size="23" font-weight="bold" fill="#192b3d">主手柄 / ALPS RK09L1120A5F</text>
+<text x="200" y="420" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">J3</text>
+<text x="200" y="444" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">电位器线束</text>
+<rect x="220" y="453" width="58" height="104" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="195" y1="470" x2="235" y2="470" stroke="#14734a" stroke-width="2"/>
+<rect x="235" y="466" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="251" y="472" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">1</text>
+<line x1="195" y1="505" x2="235" y2="505" stroke="#14734a" stroke-width="2"/>
+<rect x="235" y="501" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="251" y="507" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">2</text>
+<line x1="195" y1="540" x2="235" y2="540" stroke="#14734a" stroke-width="2"/>
+<rect x="235" y="536" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="251" y="542" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">3</text>
+<line x1="195" y1="470" x2="135" y2="470" stroke="#14734a" stroke-width="2"/>
+<text x="70" y="463" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT1_V</text>
+<line x1="195" y1="505" x2="120" y2="505" stroke="#14734a" stroke-width="2"/>
+<text x="65" y="500" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT1_W</text>
+<line x1="195" y1="540" x2="155" y2="540" stroke="#14734a" stroke-width="2"/>
+<line x1="155" y1="540" x2="155" y2="550" stroke="#14734a" stroke-width="2"/>
+<line x1="141" y1="550" x2="169" y2="550" stroke="#14734a" stroke-width="2"/>
+<line x1="146" y1="556" x2="164" y2="556" stroke="#14734a" stroke-width="2"/>
+<line x1="151" y1="562" x2="159" y2="562" stroke="#14734a" stroke-width="2"/>
+<text x="390" y="463" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="410" y1="470" x2="480" y2="470" stroke="#14734a" stroke-width="2"/>
+<line x1="480" y1="470" x2="500" y2="470" stroke="#14734a" stroke-width="2"/>
+<rect x="500" y="462" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="560" y1="470" x2="580" y2="470" stroke="#14734a" stroke-width="2"/>
+<text x="494" y="433" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R1</text>
+<text x="494" y="454" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">4.7k</text>
+<line x1="580" y1="470" x2="670" y2="470" stroke="#14734a" stroke-width="2"/>
+<text x="605" y="463" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT1_V</text>
+<text x="810" y="463" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT1_W</text>
+<line x1="825" y1="470" x2="900" y2="470" stroke="#14734a" stroke-width="2"/>
+<line x1="900" y1="470" x2="920" y2="470" stroke="#14734a" stroke-width="2"/>
+<rect x="920" y="462" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="980" y1="470" x2="1000" y2="470" stroke="#14734a" stroke-width="2"/>
+<text x="914" y="433" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R2</text>
+<text x="914" y="454" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">1k</text>
+<line x1="1000" y1="470" x2="1280" y2="470" stroke="#14734a" stroke-width="2"/>
+<text x="1160" y="463" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">ADC_MAIN</text>
+<circle cx="1070" cy="470" r="3" fill="#14734a"/>
+<line x1="1070" y1="470" x2="1070" y2="485" stroke="#14734a" stroke-width="2"/>
+<line x1="1070" y1="485" x2="1070" y2="515" stroke="#14734a" stroke-width="2"/>
+<line x1="1055" y1="515" x2="1085" y2="515" stroke="#14734a" stroke-width="2"/>
+<line x1="1055" y1="525" x2="1085" y2="525" stroke="#14734a" stroke-width="2"/>
+<line x1="1070" y1="525" x2="1070" y2="555" stroke="#14734a" stroke-width="2"/>
+<text x="1092" y="514" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C5</text>
+<text x="1092" y="536" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">100nF</text>
+<line x1="1070" y1="555" x2="1070" y2="565" stroke="#14734a" stroke-width="2"/>
+<line x1="1056" y1="565" x2="1084" y2="565" stroke="#14734a" stroke-width="2"/>
+<line x1="1061" y1="571" x2="1079" y2="571" stroke="#14734a" stroke-width="2"/>
+<line x1="1066" y1="577" x2="1074" y2="577" stroke="#14734a" stroke-width="2"/>
+<text x="85" y="678" font-family="Microsoft YaHei, sans-serif" font-size="23" font-weight="bold" fill="#192b3d">预留模拟输入 / 不用时连接器留空</text>
+<text x="200" y="700" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">J4</text>
+<text x="200" y="724" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">电位器线束</text>
+<rect x="220" y="733" width="58" height="104" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="195" y1="750" x2="235" y2="750" stroke="#14734a" stroke-width="2"/>
+<rect x="235" y="746" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="251" y="752" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">1</text>
+<line x1="195" y1="785" x2="235" y2="785" stroke="#14734a" stroke-width="2"/>
+<rect x="235" y="781" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="251" y="787" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">2</text>
+<line x1="195" y1="820" x2="235" y2="820" stroke="#14734a" stroke-width="2"/>
+<rect x="235" y="816" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="251" y="822" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">3</text>
+<line x1="195" y1="750" x2="135" y2="750" stroke="#14734a" stroke-width="2"/>
+<text x="70" y="743" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT2_V</text>
+<line x1="195" y1="785" x2="120" y2="785" stroke="#14734a" stroke-width="2"/>
+<text x="65" y="780" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT2_W</text>
+<line x1="195" y1="820" x2="155" y2="820" stroke="#14734a" stroke-width="2"/>
+<line x1="155" y1="820" x2="155" y2="830" stroke="#14734a" stroke-width="2"/>
+<line x1="141" y1="830" x2="169" y2="830" stroke="#14734a" stroke-width="2"/>
+<line x1="146" y1="836" x2="164" y2="836" stroke="#14734a" stroke-width="2"/>
+<line x1="151" y1="842" x2="159" y2="842" stroke="#14734a" stroke-width="2"/>
+<text x="390" y="743" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="410" y1="750" x2="480" y2="750" stroke="#14734a" stroke-width="2"/>
+<line x1="480" y1="750" x2="500" y2="750" stroke="#14734a" stroke-width="2"/>
+<rect x="500" y="742" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="560" y1="750" x2="580" y2="750" stroke="#14734a" stroke-width="2"/>
+<text x="494" y="713" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R3</text>
+<text x="494" y="734" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">4.7k</text>
+<line x1="580" y1="750" x2="670" y2="750" stroke="#14734a" stroke-width="2"/>
+<text x="605" y="743" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT2_V</text>
+<text x="810" y="743" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">POT2_W</text>
+<line x1="825" y1="750" x2="900" y2="750" stroke="#14734a" stroke-width="2"/>
+<line x1="900" y1="750" x2="920" y2="750" stroke="#14734a" stroke-width="2"/>
+<rect x="920" y="742" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="980" y1="750" x2="1000" y2="750" stroke="#14734a" stroke-width="2"/>
+<text x="914" y="713" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R4</text>
+<text x="914" y="734" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">1k</text>
+<line x1="1000" y1="750" x2="1280" y2="750" stroke="#14734a" stroke-width="2"/>
+<text x="1160" y="743" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">ADC_AUX</text>
+<circle cx="1070" cy="750" r="3" fill="#14734a"/>
+<line x1="1070" y1="750" x2="1070" y2="765" stroke="#14734a" stroke-width="2"/>
+<line x1="1070" y1="765" x2="1070" y2="795" stroke="#14734a" stroke-width="2"/>
+<line x1="1055" y1="795" x2="1085" y2="795" stroke="#14734a" stroke-width="2"/>
+<line x1="1055" y1="805" x2="1085" y2="805" stroke="#14734a" stroke-width="2"/>
+<line x1="1070" y1="805" x2="1070" y2="835" stroke="#14734a" stroke-width="2"/>
+<text x="1092" y="794" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">C6</text>
+<text x="1092" y="816" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">100nF</text>
+<line x1="1070" y1="835" x2="1070" y2="845" stroke="#14734a" stroke-width="2"/>
+<line x1="1056" y1="845" x2="1084" y2="845" stroke="#14734a" stroke-width="2"/>
+<line x1="1061" y1="851" x2="1079" y2="851" stroke="#14734a" stroke-width="2"/>
+<line x1="1066" y1="857" x2="1074" y2="857" stroke="#14734a" stroke-width="2"/>
+<text x="85" y="932" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#192b3d">外部电位器：J3.1 → 电阻轨一端；J3.2 → 滑动端；J3.3 → 电阻轨另一端。ALPS 端子按厂家图识别。</text>
+<text x="85" y="966" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#192b3d">4.7k 与标称 10k 形成约 2.24V 供电；ADC 选择高衰减，按机械实际行程校准。100nF 靠近主控插座。</text>
+<text x="85" y="996" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#637180">C1/C2 位于显示电源入口，C3/C4 位于载板 3V3 入口；储能与 USB 浪涌要在整机供电定稿时复核。</text>
+</svg>

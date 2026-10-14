@@ -1,0 +1,18 @@
+# Local dependencies and generated runtime data
+__pycache__/
+*.py[cod]
+.venv/
+test_tools/python_deps/
+test_tools/*.jsonl
+test_tools/latest_game_probe.json
+controller_analysis/
+inspect_controller.py
+
+# Private attachments and CAD lock files
+.codex-remote-attachments/
+~$*
+
+# Downloaded tools, installer packages and temporary exports
+.local-tools/
+*.log
+*.tmp

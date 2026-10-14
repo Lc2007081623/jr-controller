@@ -1,0 +1,77 @@
+﻿Reference,Value,Type,Footprint_status
+J1,P1 / 候选左排 1×22 排母,Module socket,PENDING actual pitch / row spacing
+J2,P2 / 候选右排 1×22 排母,Module socket,PENDING actual pitch / row spacing
+J90,显示电源输入,Connector 1x2,TBD; verify actual connector
+C1,10uF,Capacitor,0805 (voltage >= 10V for 5V rail)
+C2,100nF,Capacitor,0805 (voltage >= 10V for 5V rail)
+C3,1uF,Capacitor,0805 (voltage >= 10V for 5V rail)
+C4,100nF,Capacitor,0805 (voltage >= 10V for 5V rail)
+J3,电位器线束,Connector 1x3,TBD; verify actual connector
+R1,4.7k,Resistor,0805
+R2,1k,Resistor,0805
+C5,100nF,Capacitor,0805 (voltage >= 10V for 5V rail)
+J4,电位器线束,Connector 1x3,TBD; verify actual connector
+R3,4.7k,Resistor,0805
+R4,1k,Resistor,0805
+C6,100nF,Capacitor,0805 (voltage >= 10V for 5V rail)
+U1,SN74AHCT125D,TTL-input buffer,SOIC-14_3.9x8.7mm_P1.27mm
+R41,10k,Resistor,0805
+R42,10k,Resistor,0805
+R43,10k,Resistor,0805
+C7,100nF,Capacitor,0805 (voltage >= 10V for 5V rail)
+J5,接 HS-F13A 输入侧,Connector 1x5,TBD; verify actual connector
+R11,330R,Resistor,0805
+R10,10k,Resistor,0805
+J10,常开触点,Connector 1x2,TBD; verify actual connector
+R13,330R,Resistor,0805
+R12,10k,Resistor,0805
+J11,常开触点,Connector 1x2,TBD; verify actual connector
+R15,330R,Resistor,0805
+R14,10k,Resistor,0805
+J12,常开触点,Connector 1x2,TBD; verify actual connector
+R17,330R,Resistor,0805
+R16,10k,Resistor,0805
+J13,常开触点,Connector 1x2,TBD; verify actual connector
+R19,330R,Resistor,0805
+R18,10k,Resistor,0805
+J14,常开触点,Connector 1x2,TBD; verify actual connector
+R21,330R,Resistor,0805
+R20,10k,Resistor,0805
+J15,常开触点,Connector 1x2,TBD; verify actual connector
+R23,330R,Resistor,0805
+R22,10k,Resistor,0805
+J16,常开触点,Connector 1x2,TBD; verify actual connector
+R25,330R,Resistor,0805
+R24,10k,Resistor,0805
+J17,常开触点,Connector 1x2,TBD; verify actual connector
+R27,330R,Resistor,0805
+R26,10k,Resistor,0805
+J18,常开触点,Connector 1x2,TBD; verify actual connector
+R29,330R,Resistor,0805
+R28,10k,Resistor,0805
+J19,常开触点,Connector 1x2,TBD; verify actual connector
+R31,330R,Resistor,0805
+R30,10k,Resistor,0805
+J20,常开触点,Connector 1x2,TBD; verify actual connector
+R33,330R,Resistor,0805
+R32,10k,Resistor,0805
+J21,常开触点,Connector 1x2,TBD; verify actual connector
+J22,FWD / COM / REV,Connector 1x3,TBD; verify actual connector
+R50,330R,Resistor,0805
+R51,10k,Resistor,0805
+R52,330R,Resistor,0805
+R53,10k,Resistor,0805
+R54,330R,Resistor,0805
+R55,10k,Resistor,0805
+J23,EB触点,Connector 1x2,TBD; verify actual connector
+R56,10k,Resistor,0805
+SW1,CAL,Normally-open pushbutton,TBD
+TP1,GND,Test point,TestPoint_Pad_D1.5mm
+TP2,+3V3,Test point,TestPoint_Pad_D1.5mm
+TP3,+5V_DISP,Test point,TestPoint_Pad_D1.5mm
+TP4,ADC_MAIN,Test point,TestPoint_Pad_D1.5mm
+TP5,ADC_AUX,Test point,TestPoint_Pad_D1.5mm
+TP6,UART_TX,Test point,TestPoint_Pad_D1.5mm
+TP7,UART_RX,Test point,TestPoint_Pad_D1.5mm
+TP8,MCU_EN,Test point,TestPoint_Pad_D1.5mm
+TP9,MCU_BOOT,Test point,TestPoint_Pad_D1.5mm

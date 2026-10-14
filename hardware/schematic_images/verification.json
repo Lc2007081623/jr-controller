@@ -1,0 +1,11 @@
+{
+  "status": "drawing-model connectivity checks passed",
+  "components": 76,
+  "pins": 201,
+  "limitations": [
+    "Not an EDA netlist / no native ERC",
+    "Physical header assignment and dimensions pending",
+    "Existing board 5Vin left disconnected",
+    "Display powered by separate 5V supply, common ground only"
+  ]
+}

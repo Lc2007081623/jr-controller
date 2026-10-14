@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="2200" viewBox="0 0 1600 1100">
+<rect width="1600" height="1100" fill="white"/>
+<rect x="30" y="25" width="1540" height="1045" fill="none" stroke="#637180" stroke-width="2"/>
+<text x="60" y="77" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#192b3d">JR 单手柄控制器 / 换向、EB、校准与测试点</text>
+<text x="60" y="113" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#637180">接口输入逻辑与按钮相同；游戏换向中立与 EB/轴优先级要单独验证。</text>
+<line x1="55" y1="132" x2="1545" y2="132" stroke="#637180" stroke-width="2"/>
+<line x1="55" y1="1020" x2="1545" y2="1020" stroke="#637180" stroke-width="2"/>
+<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A0 · 2026-10-14 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
+<text x="1400" y="1053" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#637180">05 / 05</text>
+<text x="85" y="184" font-family="Microsoft YaHei, sans-serif" font-size="24" font-weight="bold" fill="#192b3d">三位换向开关 / SPDT 中间断开</text>
+<text x="1120" y="250" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">J22</text>
+<text x="1120" y="274" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">FWD / COM / REV</text>
+<rect x="1140" y="283" width="58" height="104" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="1115" y1="300" x2="1155" y2="300" stroke="#14734a" stroke-width="2"/>
+<rect x="1155" y="296" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1171" y="302" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">1</text>
+<line x1="1115" y1="335" x2="1155" y2="335" stroke="#14734a" stroke-width="2"/>
+<rect x="1155" y="331" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1171" y="337" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">2</text>
+<line x1="1115" y1="370" x2="1155" y2="370" stroke="#14734a" stroke-width="2"/>
+<rect x="1155" y="366" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="1171" y="372" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">3</text>
+<text x="100" y="293" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">REV_F</text>
+<line x1="120" y1="300" x2="400" y2="300" stroke="#14734a" stroke-width="2"/>
+<line x1="400" y1="300" x2="420" y2="300" stroke="#14734a" stroke-width="2"/>
+<rect x="420" y="292" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="480" y1="300" x2="500" y2="300" stroke="#14734a" stroke-width="2"/>
+<text x="414" y="263" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R50</text>
+<text x="414" y="284" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">330R</text>
+<line x1="500" y1="300" x2="730" y2="300" stroke="#14734a" stroke-width="2"/>
+<text x="565" y="293" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">REV_F_EXT</text>
+<circle cx="300" cy="300" r="3" fill="#14734a"/>
+<line x1="300" y1="300" x2="300" y2="270" stroke="#14734a" stroke-width="2"/>
+<line x1="300" y1="210" x2="300" y2="221" stroke="#14734a" stroke-width="2"/>
+<rect x="293" y="221" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="300" y1="259" x2="300" y2="270" stroke="#14734a" stroke-width="2"/>
+<text x="313" y="233" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R51</text>
+<text x="313" y="255" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<text x="250" y="198" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="1115" y1="300" x2="940" y2="300" stroke="#14734a" stroke-width="2"/>
+<text x="930" y="293" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">REV_F_EXT</text>
+<text x="100" y="493" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">REV_R</text>
+<line x1="120" y1="500" x2="400" y2="500" stroke="#14734a" stroke-width="2"/>
+<line x1="400" y1="500" x2="420" y2="500" stroke="#14734a" stroke-width="2"/>
+<rect x="420" y="492" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="480" y1="500" x2="500" y2="500" stroke="#14734a" stroke-width="2"/>
+<text x="414" y="463" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R52</text>
+<text x="414" y="484" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">330R</text>
+<line x1="500" y1="500" x2="730" y2="500" stroke="#14734a" stroke-width="2"/>
+<text x="565" y="493" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">REV_R_EXT</text>
+<circle cx="300" cy="500" r="3" fill="#14734a"/>
+<line x1="300" y1="500" x2="300" y2="470" stroke="#14734a" stroke-width="2"/>
+<line x1="300" y1="410" x2="300" y2="421" stroke="#14734a" stroke-width="2"/>
+<rect x="293" y="421" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="300" y1="459" x2="300" y2="470" stroke="#14734a" stroke-width="2"/>
+<text x="313" y="433" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R53</text>
+<text x="313" y="455" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<text x="250" y="398" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="1115" y1="370" x2="940" y2="370" stroke="#14734a" stroke-width="2"/>
+<text x="930" y="363" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">REV_R_EXT</text>
+<line x1="1115" y1="335" x2="1090" y2="335" stroke="#14734a" stroke-width="2"/>
+<line x1="1090" y1="335" x2="1090" y2="345" stroke="#14734a" stroke-width="2"/>
+<line x1="1076" y1="345" x2="1104" y2="345" stroke="#14734a" stroke-width="2"/>
+<line x1="1081" y1="351" x2="1099" y2="351" stroke="#14734a" stroke-width="2"/>
+<line x1="1086" y1="357" x2="1094" y2="357" stroke="#14734a" stroke-width="2"/>
+<text x="920" y="447" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#192b3d">J22.2 接开关公共端；中间位两侧均断开。</text>
+<text x="85" y="593" font-family="Microsoft YaHei, sans-serif" font-size="23" font-weight="bold" fill="#192b3d">独立 EB 触点 / 常开</text>
+<text x="100" y="713" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">EB_SW</text>
+<line x1="120" y1="720" x2="400" y2="720" stroke="#14734a" stroke-width="2"/>
+<line x1="400" y1="720" x2="420" y2="720" stroke="#14734a" stroke-width="2"/>
+<rect x="420" y="712" width="60" height="16" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="480" y1="720" x2="500" y2="720" stroke="#14734a" stroke-width="2"/>
+<text x="414" y="683" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R54</text>
+<text x="414" y="704" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">330R</text>
+<line x1="500" y1="720" x2="665" y2="720" stroke="#14734a" stroke-width="2"/>
+<circle cx="300" cy="720" r="3" fill="#14734a"/>
+<line x1="300" y1="720" x2="300" y2="690" stroke="#14734a" stroke-width="2"/>
+<line x1="300" y1="630" x2="300" y2="641" stroke="#14734a" stroke-width="2"/>
+<rect x="293" y="641" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="300" y1="679" x2="300" y2="690" stroke="#14734a" stroke-width="2"/>
+<text x="313" y="653" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R55</text>
+<text x="313" y="675" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<text x="250" y="618" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<text x="670" y="670" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#192b3d">J23</text>
+<text x="670" y="694" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">EB触点</text>
+<rect x="690" y="703" width="58" height="69" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="665" y1="720" x2="705" y2="720" stroke="#14734a" stroke-width="2"/>
+<rect x="705" y="716" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="721" y="722" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">1</text>
+<line x1="665" y1="755" x2="705" y2="755" stroke="#14734a" stroke-width="2"/>
+<rect x="705" y="751" width="8" height="8" fill="none" stroke="#192b3d" stroke-width="2"/>
+<text x="721" y="757" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#192b3d">2</text>
+<line x1="665" y1="755" x2="630" y2="755" stroke="#14734a" stroke-width="2"/>
+<line x1="630" y1="755" x2="630" y2="765" stroke="#14734a" stroke-width="2"/>
+<line x1="616" y1="765" x2="644" y2="765" stroke="#14734a" stroke-width="2"/>
+<line x1="621" y1="771" x2="639" y2="771" stroke="#14734a" stroke-width="2"/>
+<line x1="626" y1="777" x2="634" y2="777" stroke="#14734a" stroke-width="2"/>
+<text x="900" y="593" font-family="Microsoft YaHei, sans-serif" font-size="23" font-weight="bold" fill="#192b3d">SW1 本地校准按钮 / 常开</text>
+<text x="920" y="713" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">CAL_SW</text>
+<line x1="940" y1="720" x2="1240" y2="720" stroke="#14734a" stroke-width="2"/>
+<circle cx="1090" cy="720" r="3" fill="#14734a"/>
+<line x1="1090" y1="720" x2="1090" y2="690" stroke="#14734a" stroke-width="2"/>
+<line x1="1090" y1="630" x2="1090" y2="641" stroke="#14734a" stroke-width="2"/>
+<rect x="1083" y="641" width="14" height="38" fill="none" stroke="#192b3d" stroke-width="2"/>
+<line x1="1090" y1="679" x2="1090" y2="690" stroke="#14734a" stroke-width="2"/>
+<text x="1103" y="653" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">R56</text>
+<text x="1103" y="675" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="normal" fill="#192b3d">10k</text>
+<text x="1040" y="618" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">+3V3</text>
+<line x1="1240" y1="720" x2="1240" y2="745" stroke="#14734a" stroke-width="2"/>
+<line x1="1240" y1="775" x2="1240" y2="800" stroke="#14734a" stroke-width="2"/>
+<line x1="1240" y1="800" x2="1240" y2="810" stroke="#14734a" stroke-width="2"/>
+<line x1="1226" y1="810" x2="1254" y2="810" stroke="#14734a" stroke-width="2"/>
+<line x1="1231" y1="816" x2="1249" y2="816" stroke="#14734a" stroke-width="2"/>
+<line x1="1236" y1="822" x2="1244" y2="822" stroke="#14734a" stroke-width="2"/>
+<line x1="1234" y1="745" x2="1246" y2="745" stroke="#192b3d" stroke-width="2"/>
+<line x1="1234" y1="775" x2="1246" y2="775" stroke="#192b3d" stroke-width="2"/>
+<line x1="1253" y1="742" x2="1253" y2="766" stroke="#192b3d" stroke-width="2"/>
+<line x1="1253" y1="754" x2="1264" y2="754" stroke="#192b3d" stroke-width="2"/>
+<text x="1280" y="753" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#192b3d">SW1</text>
+<text x="1280" y="781" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">校准</text>
+<text x="85" y="858" font-family="Microsoft YaHei, sans-serif" font-size="23" font-weight="bold" fill="#192b3d">测试点（各自单焊盘，均不是短接跳线）</text>
+<circle cx="100" cy="930" r="3" fill="#14734a"/>
+<line x1="100" y1="910" x2="100" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="85" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP1</text>
+<text x="60" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">GND</text>
+<circle cx="260" cy="930" r="3" fill="#14734a"/>
+<line x1="260" y1="910" x2="260" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="245" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP2</text>
+<text x="220" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">+3V3</text>
+<circle cx="420" cy="930" r="3" fill="#14734a"/>
+<line x1="420" y1="910" x2="420" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="405" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP3</text>
+<text x="380" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">+5V_DISP</text>
+<circle cx="580" cy="930" r="3" fill="#14734a"/>
+<line x1="580" y1="910" x2="580" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="565" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP4</text>
+<text x="540" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">ADC_MAIN</text>
+<circle cx="740" cy="930" r="3" fill="#14734a"/>
+<line x1="740" y1="910" x2="740" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="725" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP5</text>
+<text x="700" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">ADC_AUX</text>
+<circle cx="900" cy="930" r="3" fill="#14734a"/>
+<line x1="900" y1="910" x2="900" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="885" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP6</text>
+<text x="860" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">UART_TX</text>
+<circle cx="1060" cy="930" r="3" fill="#14734a"/>
+<line x1="1060" y1="910" x2="1060" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="1045" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP7</text>
+<text x="1020" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">UART_RX</text>
+<circle cx="1220" cy="930" r="3" fill="#14734a"/>
+<line x1="1220" y1="910" x2="1220" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="1205" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP8</text>
+<text x="1180" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">MCU_EN</text>
+<circle cx="1380" cy="930" r="3" fill="#14734a"/>
+<line x1="1380" y1="910" x2="1380" y2="930" stroke="#14734a" stroke-width="2"/>
+<text x="1365" y="893" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#192b3d">TP9</text>
+<text x="1340" y="956" font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="normal" fill="#1458a0">MCU_BOOT</text>
+<text x="85" y="1002" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#637180">独立 EB 不承担实车安全功能。MCU_EN / MCU_BOOT 仅作调试测试点，正常不连接或短接。</text>
+</svg>
