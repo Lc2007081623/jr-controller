@@ -24,7 +24,7 @@ class Page:
         self.text(60,96,subtitle,17,GRAY)
         self.line(55,132,1545,132,GRAY)
         self.line(55,1020,1545,1020,GRAY)
-        self.text(65,1035,'Rev A0 · 2026-10-14 · 原理图录入参考 / 未经实物核对，不用于直接生产',16,RED)
+        self.text(65,1035,'Rev A1 · 2026-10-18 · 原理图录入参考 / 未经实物核对，不用于直接生产',16,RED)
         self.text(1400,1035,f'{number:02d} / 05',18,GRAY)
     def line(self,x1,y1,x2,y2,color=WIRE,width=2):
         self.d.line(tuple(int(v*SCALE) for v in (x1,y1,x2,y2)),fill=color,width=width*SCALE)
@@ -100,7 +100,7 @@ for ref,val,x,rail in [('C1','10uF',430,'+5V_DISP'),('C2','100nF',650,'+5V_DISP'
 p.text(85,332,'+3V3 来自主控板 J1.1 / J1.2；GND 在全系统互连。J90 使用稳定的 5V，不接 3.3V。',17,RED)
 for k,y,refj,gp in [(1,470,'J3','ADC_MAIN'),(2,750,'J4','ADC_AUX')]:
     rs,rw,cc=f'R{k*2-1}',f'R{k*2}',f'C{k+4}'
-    p.text(85,y-95,('主手柄 / ALPS RK09L1120A5F' if k==1 else '预留模拟输入 / 不用时连接器留空'),23,INK,True)
+    p.text(85,y-95,('主手柄 / RK097N B10K 三脚款' if k==1 else '预留模拟输入 / 不用时连接器留空'),23,INK,True)
     p.connector(refj,'电位器线束',220,y,3)
     pv=f'POT{k}_V';ww=f'POT{k}_W'
     p.line(195,y,135,y);p.net(70,y,pv)
@@ -112,7 +112,7 @@ for k,y,refj,gp in [(1,470,'J3','ADC_MAIN'),(2,750,'J4','ADC_AUX')]:
     for pin,net in [(1,pv),(2,ww),(3,'GND')]:conn(refj,pin,net)
     for rr,nn in [(rs,('+3V3',pv)),(rw,(ww,gp)),(cc,(gp,'GND'))]:
         conn(rr,1,nn[0]);conn(rr,2,nn[1])
-p.text(85,915,'外部电位器：J3.1 → 电阻轨一端；J3.2 → 滑动端；J3.3 → 电阻轨另一端。ALPS 端子按厂家图识别。',17)
+p.text(85,915,'外部电位器：J3.1 → 电阻轨一端；J3.2 → 滑动端；J3.3 → 电阻轨另一端。实物端子用万用表确认。',17)
 p.text(85,949,'4.7k 与标称 10k 形成约 2.24V 供电；ADC 选择高衰减，按机械实际行程校准。100nF 靠近主控插座。',17)
 p.text(85,980,'C1/C2 位于显示电源入口，C3/C4 位于载板 3V3 入口；储能与 USB 浪涌要在整机供电定稿时复核。',16,GRAY)
 p.finish()

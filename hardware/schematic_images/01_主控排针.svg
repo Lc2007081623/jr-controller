@@ -5,7 +5,7 @@
 <text x="60" y="113" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#637180">现有 S3 N16R8；此针序依据 YD 系列参考，排母脚号与板卡版本必须核对实物。</text>
 <line x1="55" y1="132" x2="1545" y2="132" stroke="#637180" stroke-width="2"/>
 <line x1="55" y1="1020" x2="1545" y2="1020" stroke="#637180" stroke-width="2"/>
-<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A0 · 2026-10-14 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
+<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A1 · 2026-10-18 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
 <text x="1400" y="1053" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#637180">01 / 05</text>
 <text x="130" y="175" font-family="Microsoft YaHei, sans-serif" font-size="21" font-weight="bold" fill="#192b3d">J1   P1 / 候选左排 1×22 排母</text>
 <rect x="130" y="196" width="260" height="666" fill="none" stroke="#192b3d" stroke-width="2"/>

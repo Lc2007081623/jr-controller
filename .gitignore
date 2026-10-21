@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 .venv/
+.pio/
+firmware/build/
+hardware_backups/
 test_tools/python_deps/
 test_tools/*.jsonl
 test_tools/latest_game_probe.json

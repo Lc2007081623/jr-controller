@@ -33,6 +33,7 @@ def slots():
 class Backend:
     def __init__(self):
         self.pad=None
+        self.notch='N';self.reverser='N'
     def connect(self):
         if self.pad is not None:return
         # Python's platform.system() can block on a stalled Windows WMI service.
@@ -46,11 +47,21 @@ class Backend:
         finally:
             platform.system,platform.architecture=old_system,old_arch
         self.pad=vgamepad.VX360Gamepad()
+        self.notch='N';self.reverser='N'
         self.pad.reset();self.pad.update()
     def set(self,name):
         if self.pad is None:raise RuntimeError('Virtual controller is not connected')
+        self.notch=name
+        return self._report()
+    def set_reverser(self,name):
+        if self.pad is None:raise RuntimeError('Virtual controller is not connected')
+        if name not in ('N','F'):raise ValueError('Unsupported reverser position')
+        self.reverser=name
+        self._report()
+    def _report(self):
+        name=self.notch
         y=round(NOTCHES[name]*32767)
-        self.pad.left_joystick(x_value=0,y_value=y)
+        self.pad.left_joystick(x_value=32767 if self.reverser=='F' else 0,y_value=y)
         self.pad.update()
         return y
     def close(self):

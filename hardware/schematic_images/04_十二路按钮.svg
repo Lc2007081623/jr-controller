@@ -5,7 +5,7 @@
 <text x="60" y="113" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#637180">外接常开按钮：按下=接地；GPIO 侧 10k 上拉，串联 330Ω。所有 GPIO 都是 3.3V 逻辑。</text>
 <line x1="55" y1="132" x2="1545" y2="132" stroke="#637180" stroke-width="2"/>
 <line x1="55" y1="1020" x2="1545" y2="1020" stroke="#637180" stroke-width="2"/>
-<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A0 · 2026-10-14 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
+<text x="65" y="1051" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="normal" fill="#b53b32">Rev A1 · 2026-10-18 · 原理图录入参考 / 未经实物核对，不用于直接生产</text>
 <text x="1400" y="1053" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="normal" fill="#637180">04 / 05</text>
 <text x="65" y="162" font-family="Microsoft YaHei, sans-serif" font-size="19" font-weight="bold" fill="#192b3d">01  警笛1</text>
 <text x="65" y="238" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="normal" fill="#1458a0">BTN01</text>
