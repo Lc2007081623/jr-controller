@@ -15,6 +15,8 @@ class Sample:
     notch: str
     forward_pressed: bool = False
     forward_count: int = 0
+    sensor: str = 'ADC'
+    sensor_ok: bool = True
 
 def parse_sample(line):
     if len(line) > 512:
@@ -43,6 +45,11 @@ def parse_sample(line):
         raise ValueError('invalid forward button')
     if type(data['forward_count']) is not int or not 0 <= data['forward_count'] <= 0xffffffff:
         raise ValueError('invalid forward count')
+    data.setdefault('sensor','ADC');data.setdefault('sensor_ok',True)
+    if data['sensor'] not in ('ADC','AS5600') or type(data['sensor_ok']) is not bool:
+        raise ValueError('invalid sensor status')
+    if not data['sensor_ok'] and data['calibrated']:
+        raise ValueError('invalid sensor cannot report a calibrated notch')
     return Sample(**{key:data[key] for key in Sample.__dataclass_fields__})
 
 class ForwardPressGate:
@@ -78,7 +85,9 @@ class DriveGate:
             self.disarm('device restarted; re-arm manually')
         self.sample=sample
         self.received=now
-        if not sample.calibrated:
+        if not sample.sensor_ok:
+            self.disarm('sensor invalid; re-arm manually')
+        elif not sample.calibrated:
             self.disarm('calibration required/in progress')
         return True
 

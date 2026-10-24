@@ -9,9 +9,10 @@ from tkinter import ttk, messagebox
 from serial_protocol import DriveGate, ForwardPressGate, NOTCH_ORDER, parse_sample
 
 class Reader(threading.Thread):
-    def __init__(self,port,events):
+    def __init__(self,port,events,parser=parse_sample):
         super().__init__(daemon=True)
         self.port,self.events=port,events
+        self.parser=parser
         self.commands=queue.Queue(maxsize=32)
         self.stop_event=threading.Event()
 
@@ -40,7 +41,7 @@ class Reader(threading.Thread):
                                 try:
                                     text=pending.decode('utf-8').strip()
                                     data=json.loads(text)
-                                    sample=parse_sample(text)
+                                    sample=self.parser(text)
                                     self.event('sample' if sample else 'info',sample or data)
                                 except (ValueError,UnicodeError) as exc:
                                     self.event('bad',str(exc))
@@ -60,13 +61,14 @@ class App:
         self.forward_gate=ForwardPressGate()
         self.forward_status=tk.StringVar(value='GPIO10 → GND：物理N且输出启用时选择前进；XInput X轴保持F')
         self.current_capture={}; self.bad_lines=0; self.centers={}
-        root.title('JR V1 · GPIO3 / MAX7219 / 串口校准'); root.geometry('1020x800')
+        root.title('JR 控制器 · 电位器 / AS5600 · 串口校准'); root.geometry('1020x800')
         self.status=tk.StringVar(value='默认仅监看，不输出游戏输入')
         self.live=tk.StringVar(value='等待串口数据')
         self.port=tk.StringVar(); self.target=tk.StringVar(value='EB')
         self.caltext=tk.StringVar(value='先开始校准，再逐个采集15个卡位')
         self.drive_status=tk.StringVar(value='虚拟手柄尚未创建')
-        ttk.Label(root,text='第一版验证：ADC GPIO3 / MAX7219 DIN6 CS5 CLK4',font=('Microsoft YaHei',15)).pack(pady=12)
+        self.heading=tk.StringVar(value='JR 控制器 / MAX7219 DIN6 CS5 CLK4')
+        ttk.Label(root,textvariable=self.heading,font=('Microsoft YaHei',15)).pack(pady=12)
         top=ttk.Frame(root);top.pack(fill='x',padx=16)
         ttk.Label(top,text='串口').pack(side='left')
         self.portbox=ttk.Combobox(top,textvariable=self.port,width=12,state='readonly');self.portbox.pack(side='left',padx=6)
@@ -76,7 +78,7 @@ class App:
         ttk.Button(top,text='显示配置',command=lambda:self.command('SCAN')).pack(side='left',padx=6)
         ttk.Label(root,textvariable=self.status,wraplength=980).pack(pady=8)
         ttk.Label(root,textvariable=self.live,font=('Consolas',17)).pack(pady=8)
-        box=ttk.LabelFrame(root,text='机械卡位校准（EB → B8…B1 → N → P1…P5；ADC也可反向）')
+        box=ttk.LabelFrame(root,text='机械卡位校准（EB → B8…B1 → N → P1…P5；支持两个方向）')
         box.pack(fill='x',padx=16,pady=8)
         row=ttk.Frame(box);row.pack(pady=8)
         ttk.Button(row,text='1 开始校准',command=self.begin).pack(side='left',padx=5)
@@ -87,7 +89,7 @@ class App:
         ttk.Button(row,text='读取校准表',command=lambda:self.command('DUMP')).pack(side='left',padx=5)
         ttk.Label(box,textvariable=self.caltext,wraplength=950).pack(pady=7)
         self.table=ttk.Treeview(box,columns=('notch','adc','captured'),show='headings',height=8)
-        for col,name in [('notch','档位'),('adc','ADC中心值'),('captured','本次采集')]:
+        for col,name in [('notch','档位'),('adc','位置中心值'),('captured','本次采集')]:
             self.table.heading(col,text=name);self.table.column(col,width=250,anchor='center')
         for name in NOTCH_ORDER:self.table.insert('','end',iid=name,values=(name,'—','—'))
         self.table.pack(fill='x',padx=10,pady=5)
@@ -188,7 +190,13 @@ class App:
             if kind=='sample':
                 if self.gate.receive(value,received_at):
                     now=time.monotonic();self.gate.output(now)
-                    self.live.set(f'RAW {value.raw:4d}  ADC {value.adc:4d}  档位 {value.notch}  CAL {int(value.calibrated)}  按钮10 {int(value.forward_pressed)}')
+                    if value.sensor=='AS5600':
+                        self.heading.set('AS5600 SDA7 SCL15 / MAX7219 DIN6 CS5 CLK4')
+                        angle=f'{value.raw*360/4096:.2f}°' if value.sensor_ok else '磁铁/通信异常'
+                        self.live.set(f'{angle}  POS {value.adc}  档位 {value.notch}  CAL {int(value.calibrated)}  按钮10 {int(value.forward_pressed)}')
+                    else:
+                        self.heading.set('电位器 ADC3 / MAX7219 DIN6 CS5 CLK4')
+                        self.live.set(f'RAW {value.raw:4d}  ADC {value.adc:4d}  档位 {value.notch}  CAL {int(value.calibrated)}  按钮10 {int(value.forward_pressed)}')
                     if self.forward_gate.receive(value,received_at,now,self.gate.armed):
                         try:
                             self.pad.set_reverser('F')
@@ -207,6 +215,8 @@ class App:
             elif kind=='info':
                 if not isinstance(value,dict):continue
                 self.log('RX '+json.dumps(value,ensure_ascii=False))
+                if value.get('type')=='ack' and value.get('message')=='calibration_saved':
+                    self.command('DUMP')
                 if value.get('type') in ('center','capture') and value.get('notch') in NOTCH_ORDER:
                     name=value['notch'];adc=value.get('adc');self.centers[name]=adc
                     if value['type']=='capture':

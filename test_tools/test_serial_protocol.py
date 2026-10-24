@@ -17,6 +17,18 @@ class ProtocolTests(unittest.TestCase):
             with self.subTest(data=data),self.assertRaises(ValueError):parse_sample(data)
     def test_ack_is_not_state(self):
         self.assertIsNone(parse_sample('{"v":1,"type":"ack","message":"ready"}'))
+    def test_as5600_sensor_fault_disarms_and_does_not_rearm(self):
+        g=DriveGate();g.receive(parse_sample(frame(sensor='AS5600',sensor_ok=True)),0);g.arm(0)
+        fault=parse_sample(frame(seq=2,sensor='AS5600',sensor_ok=False,calibrated=False,notch='--'))
+        g.receive(fault,.1)
+        self.assertEqual(g.output(.1),'N');self.assertFalse(g.armed)
+        self.assertIn('sensor invalid',g.reason)
+        g.receive(parse_sample(frame(seq=3,sensor='AS5600',sensor_ok=True,notch='P5')),.2)
+        self.assertEqual(g.output(.2),'N')
+    def test_sensor_metadata_is_strict(self):
+        self.assertEqual(parse_sample(frame()).sensor,'ADC')
+        for changes in ({'sensor':'unknown'},{'sensor_ok':0},{'sensor_ok':False}):
+            with self.assertRaises(ValueError):parse_sample(frame(**changes))
     def test_not_armed_by_data(self):
         gate=DriveGate();gate.receive(parse_sample(frame(notch='P5')),0)
         self.assertEqual(gate.output(0),'N')
