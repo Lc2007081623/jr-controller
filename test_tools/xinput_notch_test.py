@@ -30,24 +30,27 @@ def slots():
                            'ly':s.gamepad.ly,'buttons':s.gamepad.buttons})
     return result
 
+def load_vgamepad():
+    # WMI-backed platform queries can block on this Windows installation.
+    import platform
+    old_system,old_arch=platform.system,platform.architecture
+    platform.system=lambda:'Windows' if sys.platform=='win32' else old_system()
+    platform.architecture=lambda *a,**k:(str(C.sizeof(C.c_void_p)*8)+'bit','WindowsPE')
+    try:
+        import vgamepad
+        return vgamepad
+    finally:
+        platform.system,platform.architecture=old_system,old_arch
+
 class Backend:
     def __init__(self):
         self.pad=None
-        self.notch='N';self.reverser='N'
+        self.notch='N';self.reverser='N';self.buttons=0
     def connect(self):
         if self.pad is not None:return
-        # Python's platform.system() can block on a stalled Windows WMI service.
-        # The executable/platform and pointer width are already known locally.
-        import platform
-        old_system,old_arch=platform.system,platform.architecture
-        platform.system=lambda:'Windows' if sys.platform=='win32' else old_system()
-        platform.architecture=lambda *a,**k:(str(C.sizeof(C.c_void_p)*8)+'bit','WindowsPE')
-        try:
-            import vgamepad
-        finally:
-            platform.system,platform.architecture=old_system,old_arch
+        vgamepad=load_vgamepad()
         self.pad=vgamepad.VX360Gamepad()
-        self.notch='N';self.reverser='N'
+        self.notch='N';self.reverser='N';self.buttons=0
         self.pad.reset();self.pad.update()
     def set(self,name):
         if self.pad is None:raise RuntimeError('Virtual controller is not connected')
@@ -55,18 +58,28 @@ class Backend:
         return self._report()
     def set_reverser(self,name):
         if self.pad is None:raise RuntimeError('Virtual controller is not connected')
-        if name not in ('N','F'):raise ValueError('Unsupported reverser position')
+        if name not in ('N','F','R'):raise ValueError('Unsupported reverser position')
         self.reverser=name
         self._report()
     def _report(self):
         name=self.notch
         y=round(NOTCHES[name]*32767)
-        self.pad.left_joystick(x_value=32767 if self.reverser=='F' else 0,y_value=y)
+        self.pad.left_joystick(x_value={'F':32767,'N':0,'R':-32767}[self.reverser],y_value=y)
         self.pad.update()
         return y
+    def set_buttons(self,mask):
+        if type(mask) is not int or not 0 <= mask <= 15:raise ValueError('Invalid button mask')
+        if self.pad is None:raise RuntimeError('Virtual controller is not connected')
+        if mask==self.buttons:return
+        # XInput A/B/X/Y flags, in carrier GPIO0/10/20/21 order.
+        for i,button in enumerate((0x1000,0x2000,0x4000,0x8000)):
+            if mask & (1<<i):self.pad.press_button(button=button)
+            else:self.pad.release_button(button=button)
+        self.pad.update();self.buttons=mask
     def close(self):
         if self.pad:
             self.pad.reset();self.pad.update();self.pad=None
+        self.buttons=0
 
 def log_event(event):
     event={'time':time.strftime('%Y-%m-%d %H:%M:%S'),**event}

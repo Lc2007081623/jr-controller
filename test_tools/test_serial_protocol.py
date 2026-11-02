@@ -1,6 +1,6 @@
 import json
 import unittest
-from serial_protocol import DriveGate, ForwardPressGate, parse_sample
+from serial_protocol import DriveGate, ForwardPressGate, ReverserSwitchGate, parse_sample
 
 def frame(**changes):
     data=dict(v=1,type='state',boot=123,seq=1,ms=20,raw=1500,adc=1500,calibrated=True,notch='N')
@@ -70,6 +70,35 @@ class ProtocolTests(unittest.TestCase):
         gate.receive(parse_sample(frame(seq=2,notch='P5')),.1)
         self.assertEqual(gate.output(1),'N')
         self.assertFalse(gate.armed)
+
+class SwitchTests(unittest.TestCase):
+    def sample(self,position='N',**changes):
+        return parse_sample(frame(board='C3',reverser=position,**changes))
+    def test_metadata(self):
+        self.assertEqual(self.sample(buttons=15).buttons,15)
+        for fields in ({'board':'C2'},{'board':'C3'},{'reverser':'bad'},
+                       {'buttons':True},{'buttons':16},{'buttons':-1}):
+            with self.assertRaises(ValueError):parse_sample(frame(**fields))
+    def test_absolute_changes_and_no_hold_repeat(self):
+        g=ReverserSwitchGate()
+        self.assertIsNone(g.receive(self.sample(),0,0,True))
+        for i,pos in enumerate(('F','N','R','N'),1):
+            self.assertEqual(g.receive(self.sample(pos,seq=i+1),i*.1,i*.1,True),pos)
+            self.assertIsNone(g.receive(self.sample(pos,seq=i+1),i*.1,i*.1,True))
+    def test_no_replay_after_disarm_non_neutral_stale_or_restart(self):
+        for changes,arrival,now,armed in [({},.1,.1,False),({'notch':'P1'},.1,.1,True),
+                                         ({},.1,1,True),({'boot':456},.1,.1,True)]:
+            g=ReverserSwitchGate();g.receive(self.sample(),0,0,True)
+            self.assertIsNone(g.receive(self.sample('F',**changes),arrival,now,armed))
+            self.assertIsNone(g.receive(self.sample('F',**changes),now,now,True))
+    def test_arm_requires_switch_neutral_and_invalid_contacts_disarm(self):
+        for pos in ('F','R','X'):
+            g=DriveGate();g.receive(self.sample(pos),0)
+            with self.assertRaises(ValueError):g.arm(0)
+        g=DriveGate();g.receive(self.sample(),0);g.arm(0)
+        g.receive(self.sample('X',seq=2),.1)
+        self.assertFalse(g.armed)
+        self.assertEqual(g.output(.1),'N')
 
 class ForwardTests(unittest.TestCase):
     def sample(self,count=0,pressed=False,**kw):

@@ -2,11 +2,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#if !CONFIG_IDF_TARGET_ESP32S3
-#error "SDA7/SCL15 belongs to the current ESP32-S3 board; remap pins before a C3 migration."
-#endif
-
-constexpr int AS5600_SDA = 7, AS5600_SCL = 15;
+#include "board_pins.h"
 constexpr uint16_t anglePosition(uint16_t raw, uint16_t origin) {
     return (int(raw) - int(origin) + 4096) & 4095;
 }

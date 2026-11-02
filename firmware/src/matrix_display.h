@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
-constexpr uint8_t DIN_PIN = 6, CS_PIN = 5, CLK_PIN = 4;
-constexpr uint8_t BRIGHTNESS = 2, ROTATION = 0;
+#include "board_pins.h"
+constexpr uint8_t BRIGHTNESS = 2, ROTATION = 3;
 constexpr bool MIRROR_X = false;
 void writeRegister(uint8_t address, uint8_t value) {
     digitalWrite(CS_PIN, LOW);

@@ -19,3 +19,5 @@ inspect_controller.py
 .local-tools/
 *.log
 *.tmp
+/build/
+/release/

@@ -8,9 +8,24 @@
 
 // 2026-10-21: validated matrix pins 6/5/4; potentiometer wiper GPIO3.
 constexpr int ADC_PIN = 3;
-constexpr int FORWARD_PIN = 10;
 bool forwardRaw = false, forwardPressed = false;
 uint32_t forwardChangedAt = 0, forwardCount = 0;
+#if CONFIG_IDF_TARGET_ESP32C3
+#include "reverser_calibration.h"
+#include "button_calibration.h"
+uint8_t inputsRaw = 0, inputsStable = 0;
+uint8_t reverserMap[3] = {1,0,2}, reverserPending[3] = {};
+uint8_t reverserCaptured = 0;
+bool reverserCollecting = false;
+uint8_t buttonMap[4]={1,2,4,8}, buttonPending[4]={}, buttonCaptured=0;
+bool buttonCollecting=false;
+uint32_t inputsChangedAt = 0;
+uint8_t readInputs() {
+    uint8_t bits = (digitalRead(FORWARD_PIN) == LOW) | ((digitalRead(REVERSE_PIN) == LOW) << 1);
+    for (int i = 0; i < 4; ++i) bits |= (digitalRead(BUTTON_PINS[i]) == LOW) << (i+2);
+    return bits;
+}
+#endif
 // Real EB/B8 centers are 16 ADC counts apart; keep a 12-count floor.
 constexpr int COUNT = 15, MIN_GAP = 12;
 const char *const names[COUNT] = {
@@ -61,7 +76,7 @@ void ack(const char *message) {
 
 void scanDisplay() {
 #ifdef JR_USE_AS5600
-    Serial.println("{\"v\":1,\"type\":\"display\",\"driver\":\"MAX7219\",\"din\":6,\"cs\":5,\"clk\":4,\"sensor\":\"AS5600\",\"sda\":7,\"scl\":15,\"readback\":false}");
+    Serial.printf("{\"v\":1,\"type\":\"display\",\"driver\":\"MAX7219\",\"board\":\"%s\",\"din\":%u,\"cs\":%u,\"clk\":%u,\"sensor\":\"AS5600\",\"sda\":%d,\"scl\":%d,\"readback\":false}\n", BOARD_NAME, DIN_PIN, CS_PIN, CLK_PIN, AS5600_SDA, AS5600_SCL);
 #else
     // MAX7219 has no readback; this reports configuration, not detected hardware.
     Serial.println("{\"v\":1,\"type\":\"display\",\"driver\":\"MAX7219\",\"din\":6,\"cs\":5,\"clk\":4,\"adc_pin\":3,\"readback\":false}");
@@ -69,7 +84,76 @@ void scanDisplay() {
 }
 
 void runCommand(char *s) {
+#if CONFIG_IDF_TARGET_ESP32C3
+    if (s[0]=='K') {
+        if (!strcmp(s,"KBEGIN")) {
+            buttonCollecting=true;buttonCaptured=0;collecting=false;reverserCollecting=false;
+            ack("button_calibration_started");
+        } else if (!strncmp(s,"KCAP ",5)) {
+            if (!buttonCollecting) { ack("error_button_begin_first");return; }
+            int index=-1;
+            for (int i=0;i<4;++i) if (s[5]=="ABXY"[i] && !s[6]) index=i;
+            if (index<0) { ack("error_button_name");return; }
+            uint8_t raw=inputsStable>>2;
+            if (!raw || (raw&(raw-1)) || readInputs()!=inputsStable || uint32_t(millis()-inputsChangedAt)<60) {
+                ack("error_button_hold_one");return;
+            }
+            for (int i=0;i<4;++i) if (i!=index && (buttonCaptured&(1<<i)) && buttonPending[i]==raw) {
+                ack("error_button_duplicate");return;
+            }
+            buttonPending[index]=raw;buttonCaptured|=1<<index;
+            Serial.printf("{\"v\":1,\"type\":\"button_capture\",\"button\":\"%c\",\"contact\":%u}\n","ABXY"[index],raw);
+        } else if (!strcmp(s,"KSAVE")) {
+            if (!buttonCollecting || buttonCaptured!=15 || !validButtonMap(buttonPending)) {
+                ack("error_button_capture_all_four");return;
+            }
+            if (!prefs.begin("jr-btn",false)) { ack("error_nvs_open");return; }
+            size_t written=prefs.putBytes("map",buttonPending,4);prefs.end();
+            if (written!=4) { ack("error_nvs_write");return; }
+            memcpy(buttonMap,buttonPending,4);buttonCollecting=false;ack("button_calibration_saved");
+        } else if (!strcmp(s,"KCANCEL")) {
+            buttonCollecting=false;ack("button_calibration_cancelled");
+        } else if (strcmp(s,"KDUMP")) { ack("error_unknown_command");return; }
+        Serial.printf("{\"v\":1,\"type\":\"button_config\",\"map\":[%u,%u,%u,%u],\"collecting\":%s}\n",buttonMap[0],buttonMap[1],buttonMap[2],buttonMap[3],buttonCollecting?"true":"false");
+        return;
+    }
+    if (s[0] == 'R') {
+        if (!strcmp(s,"RBEGIN")) {
+            reverserCollecting = true; reverserCaptured = 0;
+            buttonCollecting=false;collecting=false;
+            ack("reverser_calibration_started");
+        } else if (!strncmp(s,"RCAP ",5)) {
+            if (!reverserCollecting) { ack("error_reverser_begin_first"); return; }
+            const char *names[] = {"F","N","R"};
+            int index = -1;
+            for (int i = 0; i < 3; ++i) if (!strcmp(s+5,names[i])) index = i;
+            if (index < 0) { ack("error_reverser_name"); return; }
+            if (readInputs() != inputsStable || uint32_t(millis()-inputsChangedAt) < 60) {
+                ack("error_reverser_hold_still"); return;
+            }
+            reverserPending[index] = inputsStable & 3;
+            reverserCaptured |= 1 << index;
+            Serial.printf("{\"v\":1,\"type\":\"reverser_capture\",\"position\":\"%s\",\"contacts\":%u}\n",names[index],reverserPending[index]);
+        } else if (!strcmp(s,"RSAVE")) {
+            if (!reverserCollecting || reverserCaptured != 7 || !validReverserCalibration(reverserPending)) {
+                ack("error_reverser_need_distinct_F_N_R_center_off"); return;
+            }
+            if (!prefs.begin("jr-rev",false)) { ack("error_nvs_open"); return; }
+            size_t written = prefs.putBytes("map",reverserPending,3); prefs.end();
+            if (written != 3) { ack("error_nvs_write"); return; }
+            memcpy(reverserMap,reverserPending,3); reverserCollecting = false;
+            ack("reverser_calibration_saved");
+        } else if (!strcmp(s,"RCANCEL")) {
+            reverserCollecting = false; ack("reverser_calibration_cancelled");
+        } else if (strcmp(s,"RDUMP")) { ack("error_unknown_command"); return; }
+        Serial.printf("{\"v\":1,\"type\":\"reverser_config\",\"F\":%u,\"N\":%u,\"R\":%u,\"collecting\":%s}\n",reverserMap[0],reverserMap[1],reverserMap[2],reverserCollecting ? "true":"false");
+        return;
+    }
+#endif
     if (!strcmp(s, "BEGIN")) {
+#if CONFIG_IDF_TARGET_ESP32C3
+        buttonCollecting=false;reverserCollecting=false;
+#endif
         collecting = true; captured = 0; pending = {}; pending.magic = MAGIC; notch = -1;
         ack("calibration_started");
     } else if (!strncmp(s, "CAP ", 4)) {
@@ -184,6 +268,23 @@ void setup() {
     pinMode(ADC_PIN, INPUT);
 #endif
     pinMode(FORWARD_PIN, INPUT_PULLUP);
+#if CONFIG_IDF_TARGET_ESP32C3
+    pinMode(REVERSE_PIN, INPUT_PULLUP);
+    for (int pin : BUTTON_PINS) pinMode(pin, INPUT_PULLUP);
+    inputsRaw = inputsStable = readInputs();
+    if (prefs.begin("jr-btn",true)) {
+        uint8_t map[4]={};
+        if (prefs.getBytesLength("map")==4 && prefs.getBytes("map",map,4)==4 && validButtonMap(map))
+            memcpy(buttonMap,map,4);
+        prefs.end();
+    }
+    if (prefs.begin("jr-rev",true)) {
+        uint8_t map[3] = {};
+        if (prefs.getBytesLength("map") == 3 && prefs.getBytes("map",map,3) == 3 && validReverserCalibration(map))
+            memcpy(reverserMap,map,3);
+        prefs.end();
+    }
+#endif
     forwardRaw = forwardPressed = digitalRead(FORWARD_PIN) == LOW;
     matrixBegin();
     Serial.begin(115200); bootId = esp_random();
@@ -202,7 +303,7 @@ void setup() {
     }
     calibrated = validCalibration(saved);
 #ifdef JR_USE_AS5600
-    ack("jr_as5600_ready_sda7_scl15_din6_cs5_clk4");
+    ack("jr_as5600_ready");
 #else
     ack("jr_matrix_ready_adc3_din6_cs5_clk4");
 #endif
@@ -222,21 +323,39 @@ void loop() {
         }
     }
     uint32_t now = millis();
+#if CONFIG_IDF_TARGET_ESP32C3
+    uint8_t inputs = readInputs();
+    if (inputs != inputsRaw) { inputsRaw = inputs; inputsChangedAt = now; }
+    if (uint32_t(now-inputsChangedAt) >= 30) inputsStable = inputsRaw;
+#else
     bool pressed = digitalRead(FORWARD_PIN) == LOW;
     if (pressed != forwardRaw) { forwardRaw = pressed; forwardChangedAt = now; }
     if (forwardRaw != forwardPressed && uint32_t(now-forwardChangedAt) >= 30) {
         forwardPressed = forwardRaw;
         if (forwardPressed) ++forwardCount;
     }
+#endif
     if (uint32_t(now-sampleAt) >= 5) { sampleAt = now; sample(); }
     if (uint32_t(now-reportAt) >= 20) {
         reportAt = now;
         const bool healthy = positionValid && !sensorFaultPending;
-        const bool ready = calibrated && !collecting && notch >= 0 && healthy;
-        Serial.printf("{\"v\":1,\"type\":\"state\",\"boot\":%lu,\"seq\":%lu,\"ms\":%lu,\"raw\":%u,\"adc\":%u,\"calibrated\":%s,\"notch\":\"%s\",\"forward_pressed\":%s,\"forward_count\":%lu,\"sensor\":\"%s\",\"sensor_ok\":%s}\n",
+        const bool ready = calibrated && !collecting && notch >= 0 && healthy
+#if CONFIG_IDF_TARGET_ESP32C3
+            && !buttonCollecting
+#endif
+            ;
+        Serial.printf("{\"v\":1,\"type\":\"state\",\"boot\":%lu,\"seq\":%lu,\"ms\":%lu,\"raw\":%u,\"adc\":%u,\"calibrated\":%s,\"notch\":\"%s\",\"forward_pressed\":%s,\"forward_count\":%lu,\"sensor\":\"%s\",\"sensor_ok\":%s,\"board\":\"%s\"",
             (unsigned long)bootId, (unsigned long)sequence++, (unsigned long)now,
             rawAdc, filtered, ready ? "true":"false", ready ? names[notch]:"--",
-            forwardPressed ? "true":"false", (unsigned long)forwardCount, SOURCE, healthy ? "true":"false");
+            forwardPressed ? "true":"false", (unsigned long)forwardCount, SOURCE, healthy ? "true":"false", BOARD_NAME);
+#if CONFIG_IDF_TARGET_ESP32C3
+        char reverser = 'X';
+        if (!reverserCollecting) {
+            for (int i = 0; i < 3; ++i) if ((inputsStable & 3) == reverserMap[i]) reverser = "FNR"[i];
+        }
+        Serial.printf(",\"reverser\":\"%c\",\"buttons\":%u", reverser, mappedButtons(inputsStable>>2,buttonMap));
+#endif
+        Serial.println("}");
         sensorFaultPending = false;
     }
     if (uint32_t(now-displayAt) >= 100) {
