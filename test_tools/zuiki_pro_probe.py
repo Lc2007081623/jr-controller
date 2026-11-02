@@ -7,6 +7,7 @@ import time
 from serial_notch_bridge import Reader
 from serial_protocol import AutoDriveGate
 from zuiki_virtual_test import ZuikiVirtual,NOTCH_BYTES,raw_hid_paths
+from zuiki_pro import REVERSER_BYTES
 
 VID,PID=0x33dd,0x0006
 AXES={'x':'bThumbLX','z':'bThumbRX','rz':'bThumbRY'}
@@ -15,7 +16,7 @@ def probe_axis(axis,reverser,inverted=False):
     if axis not in AXES:raise ValueError('Unsupported probe axis')
     if reverser not in ('N','F','R'):raise ValueError('Invalid reverser')
     # RUNNING TRAIN feedback: the Rz probe's original F/N values were swapped.
-    values={'N':0,'F':128,'R':255} if axis=='rz' else {'N':128,'F':0,'R':255}
+    values=REVERSER_BYTES if axis=='rz' else {'N':128,'F':0,'R':255}
     if inverted:values={**values,'F':values['R'],'R':values['F']}
     return AXES[axis],values[reverser]
 
@@ -66,8 +67,7 @@ def main():
             if not gate.armed:direction='N';buttons=0
             else:
                 buttons=sample.buttons
-                # The physical switch may change the hypothesis only at handle N.
-                if notch=='N':direction=sample.reverser
+                direction=sample.reverser
             device.set(notch,buttons,direction)
             state=(notch,buttons,direction,gate.armed,gate.reason,
                    sample.notch if sample else None,sample.reverser if sample else None)

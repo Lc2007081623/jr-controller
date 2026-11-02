@@ -22,52 +22,59 @@ class App:
         self.gate=AutoDriveGate();self.retry_at=0;self.pad_retry_at=0
         self.opened_at=0;self.last_sample_at=0;self.calibration=None;self.closing=False
         self.output_mode=load_mode()
-        apply_theme(root);root.title(TITLE);root.geometry('650x770');root.resizable(False,False)
+        apply_theme(root);root.title(TITLE);root.geometry('760x740');root.resizable(False,False)
         self.status=tk.StringVar(value='正在连接控制器…')
         self.live=tk.StringVar(value='插入 USB 后自动连接')
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
-        body=ttk.Frame(root,padding=28);body.pack(fill='both',expand=True)
-        header=ttk.Frame(body);header.pack(fill='x',pady=(0,20))
-        ttk.Label(header,text='JR Controller',style='Title.TLabel').pack(anchor='w')
-        ttk.Label(header,text='让每一个卡位，都准确到达。',style='Muted.TLabel').pack(anchor='w',pady=(4,0))
+        header=tk.Frame(root,bg=INK,padx=28,pady=20);header.pack(fill='x')
+        tk.Label(header,text='JR / CONTROLLER',bg=INK,fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
+        tk.Label(header,text='CONTROL DESK  /  0.4',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
+        tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
+        body=ttk.Frame(root,padding=(26,20));body.pack(fill='both',expand=True)
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,14))
         ttk.Label(games,text='游戏模式').pack(side='left',padx=(0,12))
         self.mode=tk.StringVar(value=self.output_mode)
-        self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=29)
-        self.mode_box.pack(side='left');self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
+        self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=32)
+        self.mode_box.pack(side='left',fill='x',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
         self.mode_hint=tk.StringVar();self.update_mode_hint()
-        ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=580).pack(anchor='w',pady=(0,12))
+        ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,14))
         status_card=tk.Frame(body,bg=CARD,padx=18,pady=15);status_card.pack(fill='x',pady=(0,14))
         self.badge=tk.Label(status_card,text='● 等待连接',bg='#EDF2FA',fg=MUTED,font=('Microsoft YaHei UI',10,'bold'),padx=10,pady=5)
-        self.badge.pack(anchor='w')
-        tk.Label(status_card,textvariable=self.status,bg=CARD,fg=INK,font=('Microsoft YaHei UI',11),wraplength=530,anchor='w',justify='left').pack(anchor='w',pady=(10,4))
-        tk.Label(status_card,textvariable=self.live,bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',9),anchor='w').pack(anchor='w')
+        self.badge.pack(side='right',anchor='n')
+        tk.Label(status_card,textvariable=self.status,bg=CARD,fg=INK,font=('Microsoft YaHei UI',12,'bold'),wraplength=470,anchor='w',justify='left').pack(anchor='w',pady=(0,7))
+        tk.Label(status_card,textvariable=self.live,bg=CARD,fg=MUTED,font=('Segoe UI',10),anchor='w').pack(anchor='w')
         metrics=tk.Frame(body,bg=BG);metrics.pack(fill='x',pady=(0,14))
-        main=tk.Frame(metrics,bg=CARD,padx=20,pady=12);main.pack(side='left',fill='both',expand=True,padx=(0,7))
-        tk.Label(main,text='主手柄',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
-        self.notch_label=tk.Label(main,textvariable=self.notch_text,bg=CARD,fg=BLUE,font=('Segoe UI',46,'bold'));self.notch_label.pack(anchor='w')
-        direction=tk.Frame(metrics,bg=CARD,padx=20,pady=12);direction.pack(side='left',fill='both',expand=True,padx=(7,0))
-        tk.Label(direction,text='换向器',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
-        tk.Label(direction,textvariable=self.reverser_text,bg=CARD,fg=INK,font=('Microsoft YaHei UI',24,'bold'),pady=14).pack(anchor='w')
+        metrics.columnconfigure((0,1),weight=1,uniform='metric')
+        main=tk.Frame(metrics,bg=CARD,padx=22,pady=16);main.grid(row=0,column=0,sticky='nsew',padx=(0,7))
+        tk.Label(main,text='01  /  主手柄',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
+        self.notch_label=tk.Label(main,textvariable=self.notch_text,bg=CARD,fg=BLUE,font=('Segoe UI',57,'bold'));self.notch_label.pack(anchor='w')
+        tk.Label(main,text='牵引  /  空挡  /  制动',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',9)).pack(anchor='w')
+        direction=tk.Frame(metrics,bg=CARD,padx=22,pady=16);direction.grid(row=0,column=1,sticky='nsew',padx=(7,0))
+        tk.Label(direction,text='02  /  换向器',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
+        tk.Label(direction,textvariable=self.reverser_text,bg=CARD,fg=INK,font=('Microsoft YaHei UI',23,'bold'),pady=14).pack(anchor='w')
+        selector=tk.Frame(direction,bg=CARD);selector.pack(anchor='w',pady=(0,6));self.direction_labels={}
+        for value in ('F','N','R'):
+            label=tk.Label(selector,text=value,bg='#EDF2FA',fg=MUTED,font=('Segoe UI',11,'bold'),width=4,pady=5)
+            label.pack(side='left',padx=(0,6));self.direction_labels[value]=label
         buttons=tk.Frame(body,bg=CARD,padx=14,pady=12);buttons.pack(fill='x',pady=(0,18))
-        tk.Label(buttons,text='按钮状态',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w',padx=6,pady=(0,8))
+        tk.Label(buttons,text='03  /  实体按键',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w',padx=6,pady=(0,8))
         strip,self.key_labels=button_strip(buttons);strip.pack(anchor='w')
         row=ttk.Frame(body);row.pack(fill='x')
         ttk.Button(row,text='校准与设置',style='Accent.TButton',command=self.calibrate).pack(side='left')
         ttk.Button(row,text='最小化',command=root.iconify).pack(side='left',padx=10)
         ttk.Button(row,text='退出',command=self.close).pack(side='right')
-        ttk.Label(body,text='校准一次，自动连接。主手柄与换向器回 N 后就绪。',style='Muted.TLabel',wraplength=580).pack(anchor='w',pady=(16,0))
+        ttk.Label(body,text='校准保存在控制器中  ·  USB 自动连接  ·  实时跟随当前位置',style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(16,0))
         root.protocol('WM_DELETE_WINDOW',self.close);root.after(20,self.tick)
 
     def update_mode_hint(self):
-        self.mode_hint.set('先选此模式，再启动或重启游戏；关闭 Steam Input。主手柄和按键可用，换向器待解决。'
-                           if self.output_mode==ZUIKI else '使用虚拟 Xbox 手柄输出；主手柄、换向器和四按钮。')
+        self.mode_hint.set('ZUIKI PRO · 主手柄 / 换向器 / 四按键。先打开本程序，再启动游戏；关闭 Steam Input。'
+                           if self.output_mode==ZUIKI else 'Xbox · 主手柄 / 换向器 / 四按键。连接后立即跟随当前档位。')
 
     def change_mode(self,event=None):
         mode=self.mode.get()
         if mode not in MODES or mode==self.output_mode:return
         self.release();self.drop_pad();self.output_mode=mode;self.pad_retry_at=0
-        self.update_mode_hint();self.status.set('正在切换游戏模式，请将主手柄和换向器回 N')
+        self.update_mode_hint();self.status.set('正在切换游戏模式…')
         try:save_mode(mode)
         except OSError:self.status.set('模式已切换，但未能保存设置；下次启动需重新选择')
 
@@ -76,6 +83,8 @@ class App:
         self.notch_text.set(sample.notch if sample else '—')
         rev=sample.reverser if sample else None
         self.reverser_text.set({'F':'前进 F','N':'空挡 N','R':'后退 R','X':'异常'}.get(rev,'—'))
+        for value,label in self.direction_labels.items():
+            label.configure(bg=BLUE if value==rev else '#EDF2FA',fg='white' if value==rev else MUTED)
         color=RED if sample and sample.notch.startswith(('B','E')) else GREEN if sample and sample.notch.startswith('P') else BLUE
         self.notch_label.configure(fg=color)
         update_buttons(self.key_labels,sample.buttons if sample else 0)
@@ -87,7 +96,7 @@ class App:
         self.badge.configure(text=text,fg=fg,bg=bg)
 
     def release(self):
-        self.gate.disarm();self.gate.neutral_since=None
+        self.gate.disarm()
         if self.pad:
             try:
                 self.pad.set_buttons(0);self.pad.set('N');self.pad.set_reverser('N')
@@ -174,7 +183,7 @@ class App:
                         self.pad.set_buttons(0)
                         if self.pad.reverser!='N':self.pad.set_reverser('N')
                     elif sample:
-                        if sample.notch=='N' and sample.reverser in ('F','N','R') and self.pad.reverser!=sample.reverser:
+                        if sample.reverser in ('F','N','R') and self.pad.reverser!=sample.reverser:
                             self.pad.set_reverser(sample.reverser)
                         self.pad.set_buttons(sample.buttons)
                 except Exception:

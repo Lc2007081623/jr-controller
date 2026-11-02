@@ -4,7 +4,7 @@ ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项�
 
 当前版本：**v0.2.0（AS5600 接入版）**，详见[版本记录](CHANGELOG.md)。
 
-Windows 简化安装包：`release/JRControllerSetup.exe`（开发版 0.3.1）。安装一次后可随登录后台运行，自动连接 C3、创建手柄和断线重连；主手柄及换向器回 N、松开按钮后自动启用。卡片式状态面板与校准中心支持主手柄、换向器和四个按钮学习，目标电脑无需 Python。详见 [安装与使用](installer/README.md)。
+Windows 简化安装包：`release/JRControllerSetup.exe`（开发版 0.4.0）。自动连接 C3 并立即跟随当前档位，支持 JR EAST（Xbox）与 RUNNING TRAIN（ZUIKI PRO）的主手柄、F/N/R 换向器和四按钮；取消启动回 N 与仅 N 可换向限制。控制台状态面板与校准中心支持主手柄、换向器和四个按钮学习，目标电脑无需 Python。详见 [安装与使用](installer/README.md)。
 
 2026-11-01 开发更新：新增 C3 载板环境 `c3_as5600_controller`，点阵 DIN4/CS3/CLK2，AS5600 SDA6/SCL5，三档 F/N/R、换向器校准与四个 A/B/X/Y 按钮。接线及校准步骤见 [C3 接线与验证](docs/C3接线与验证.md)。下文 S3 接线与历史参考图不用于 C3 载板。
 

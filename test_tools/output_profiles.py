@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from xinput_notch_test import Backend
-from zuiki_virtual_test import ZuikiVirtual
+from zuiki_pro import ZuikiProVirtual
 
 XBOX='JR EAST（Xbox）'
 ZUIKI='RUNNING TRAIN（ZUIKI）'
@@ -27,17 +27,16 @@ def save_mode(mode):
     temp.replace(path)
 
 class ZuikiBackend:
-    """Use the tested handle/buttons; reverser remains unverified and is not sent."""
+    """Verified Pro handle, buttons and absolute reverser output."""
     def __init__(self):
         self.pad=None;self.notch='N';self.buttons=0;self.reverser='N'
 
     def connect(self):
-        if self.pad is None:self.pad=ZuikiVirtual()
+        if self.pad is None:self.pad=ZuikiProVirtual()
 
     def _report(self):
         if self.pad is None:raise RuntimeError('Virtual controller is not connected')
-        # shortcut: neutral hat until RUNNING TRAIN reverser mapping is verified.
-        self.pad.set(self.notch,self.buttons,'N')
+        self.pad.set(self.notch,self.buttons,self.reverser)
 
     def set(self,name):
         self.notch=name;self._report()
@@ -47,7 +46,9 @@ class ZuikiBackend:
             self.buttons=mask;self._report()
 
     def set_reverser(self,name):
+        if name not in ('F','N','R'):raise ValueError('Invalid reverser')
         self.reverser=name
+        self._report()
 
     def close(self):
         pad,self.pad=self.pad,None

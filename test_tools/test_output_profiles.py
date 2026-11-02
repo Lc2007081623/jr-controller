@@ -22,10 +22,10 @@ class ProfileTests(unittest.TestCase):
             self.assertIs(profiles.create_backend(profiles.XBOX),xbox.return_value)
 
     def test_zuiki_retains_buttons_between_notches_and_releases_on_close(self):
-        with patch.object(profiles,'ZuikiVirtual') as device:
+        with patch.object(profiles,'ZuikiProVirtual') as device:
             pad=profiles.ZuikiBackend();pad.connect()
             pad.set_buttons(15);pad.set('P5');pad.set_reverser('F')
-            device.return_value.set.assert_called_with('P5',15,'N')
+            device.return_value.set.assert_called_with('P5',15,'F')
             pad.set_buttons(0);pad.set('N');pad.close()
             device.return_value.set.assert_called_with('N',0,'N')
             device.return_value.close.assert_called_once()

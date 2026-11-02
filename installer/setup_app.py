@@ -67,7 +67,7 @@ def install(payload,startup,progress):
             try:winreg.DeleteValue(key,'JRController')
             except FileNotFoundError:pass
     with winreg.CreateKeyEx(winreg.HKEY_LOCAL_MACHINE,UNINSTALL_KEY,0,winreg.KEY_SET_VALUE|winreg.KEY_WOW64_64KEY) as key:
-        for name,value in {'DisplayName':APP_NAME,'DisplayVersion':'0.3.2','Publisher':'JR Controller Project',
+        for name,value in {'DisplayName':APP_NAME,'DisplayVersion':'0.4.0','Publisher':'JR Controller Project',
                            'InstallLocation':str(target),'DisplayIcon':str(target/'JRController.exe'),
                            'UninstallString':f'"{target / "Uninstall.exe"}" --uninstall'}.items():
             winreg.SetValueEx(key,name,0,winreg.REG_SZ,value)

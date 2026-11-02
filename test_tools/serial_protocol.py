@@ -145,26 +145,12 @@ class DriveGate:
         return self.sample.notch if self.armed else 'N'
 
 class AutoDriveGate(DriveGate):
-    """Enable after 300ms at neutral; faults and unplug still release all inputs."""
-    def __init__(self):
-        super().__init__()
-        self.neutral_since=None
-
-    def receive(self,sample,now):
-        if (self.sample and sample.boot != self.sample.boot) or (self.received is not None and now-self.received > self.timeout):
-            self.neutral_since=None
-        return super().receive(sample,now)
-
+    """Follow any fresh calibrated position immediately; faults release output."""
     def update(self,now,enabled=True):
         self.output(now)
         fresh=self.received is not None and 0 <= now-self.received <= .15
         if not enabled or not fresh or not self.sample.calibrated or not self.sample.sensor_ok or self.sample.reverser=='X':
-            self.disarm('等待控制器或完成校准');self.neutral_since=None
-        elif not self.armed:
-            if self.sample.notch=='N' and self.sample.reverser in (None,'N') and not self.sample.buttons:
-                if self.neutral_since is None:self.neutral_since=now
-                if now-self.neutral_since >= .3:self.arm(now)
-                else:self.reason='已回空挡，正在连接'
-            else:
-                self.neutral_since=None;self.reason='将主手柄和换向器置 N，松开按钮'
+            self.disarm('等待控制器或完成校准')
+        else:
+            self.armed=True;self.reason='已连接，实时输出'
         return self.sample.notch if self.armed else 'N'
