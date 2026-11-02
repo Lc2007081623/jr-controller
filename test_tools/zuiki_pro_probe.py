@@ -14,8 +14,9 @@ AXES={'x':'bThumbLX','z':'bThumbRX','rz':'bThumbRY'}
 def probe_axis(axis,reverser,inverted=False):
     if axis not in AXES:raise ValueError('Unsupported probe axis')
     if reverser not in ('N','F','R'):raise ValueError('Invalid reverser')
-    values={'N':128,'F':0,'R':255}
-    if inverted:values={'N':128,'F':255,'R':0}
+    # RUNNING TRAIN feedback: the Rz probe's original F/N values were swapped.
+    values={'N':0,'F':128,'R':255} if axis=='rz' else {'N':128,'F':0,'R':255}
+    if inverted:values={**values,'F':values['R'],'R':values['F']}
     return AXES[axis],values[reverser]
 
 class ProProbe(ZuikiVirtual):
