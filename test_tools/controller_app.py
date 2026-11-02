@@ -2,6 +2,7 @@
 import ctypes
 import queue
 import sys
+from pathlib import Path
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -28,7 +29,7 @@ class App:
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
         header=tk.Frame(root,bg=INK,padx=28,pady=20);header.pack(fill='x')
         tk.Label(header,text='JR / CONTROLLER',bg=INK,fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
-        tk.Label(header,text='CONTROL DESK  /  0.4',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
+        tk.Label(header,text='CONTROL DESK  /  0.4.1',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
         tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
         body=ttk.Frame(root,padding=(26,20));body.pack(fill='both',expand=True)
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,14))
@@ -62,9 +63,16 @@ class App:
         row=ttk.Frame(body);row.pack(fill='x')
         ttk.Button(row,text='校准与设置',style='Accent.TButton',command=self.calibrate).pack(side='left')
         ttk.Button(row,text='最小化',command=root.iconify).pack(side='left',padx=10)
+        ttk.Button(row,text='使用说明',command=self.open_guide).pack(side='left')
         ttk.Button(row,text='退出',command=self.close).pack(side='right')
         ttk.Label(body,text='校准保存在控制器中  ·  USB 自动连接  ·  实时跟随当前位置',style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(16,0))
         root.protocol('WM_DELETE_WINDOW',self.close);root.after(20,self.tick)
+
+    def open_guide(self):
+        import os
+        path=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]/'installer'))/'first_steps.html'
+        try:os.startfile(path)
+        except OSError:self.status.set('使用说明无法打开，请查看安装目录中的 first_steps.html')
 
     def update_mode_hint(self):
         self.mode_hint.set('ZUIKI PRO · 主手柄 / 换向器 / 四按键。先打开本程序，再启动游戏；关闭 Steam Input。'
@@ -201,6 +209,9 @@ class App:
         self.disconnect();self.drop_pad();self.root.destroy()
 
 def main():
+    if len(sys.argv)==3 and sys.argv[1]=='--self-check':
+        from install_check import write_check
+        return write_check(sys.argv[2])
     kernel=ctypes.WinDLL('kernel32',use_last_error=True)
     kernel.CreateMutexExW.argtypes=[ctypes.c_void_p,ctypes.c_wchar_p,ctypes.c_ulong,ctypes.c_ulong]
     kernel.CreateMutexExW.restype=ctypes.c_void_p
@@ -229,4 +240,4 @@ def main():
     finally:
         kernel.CloseHandle.argtypes=[ctypes.c_void_p];kernel.CloseHandle(mutex)
 
-if __name__=='__main__':main()
+if __name__=='__main__':sys.exit(main())

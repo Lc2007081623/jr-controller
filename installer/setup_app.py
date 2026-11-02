@@ -1,5 +1,7 @@
 """Offline Windows installer, built with the same PyInstaller tool as the app."""
 import ctypes
+import json
+import logging
 import os
 from pathlib import Path
 import queue
@@ -13,11 +15,40 @@ from tkinter import ttk
 import winreg
 
 APP_NAME='JR Controller'
+VERSION='0.4.1'
 UNINSTALL_KEY=r'Software\Microsoft\Windows\CurrentVersion\Uninstall\JRController'
 RUN_KEY=r'Software\Microsoft\Windows\CurrentVersion\Run'
 
 def install_directory():
     return Path(os.environ['ProgramW6432'])/APP_NAME
+
+def check_system():
+    arch=os.environ.get('PROCESSOR_ARCHITEW6432') or os.environ.get('PROCESSOR_ARCHITECTURE','')
+    if sys.platform!='win32' or sys.getwindowsversion().major<10 or arch.upper()!='AMD64':
+        raise RuntimeError('此安装包适用于 Windows 10/11 64 位（Intel/AMD）电脑。')
+
+def verify_app(target):
+    with tempfile.TemporaryDirectory(prefix='JRInstallCheck-') as temp:
+        report=Path(temp)/'check.json'
+        try:
+            result=subprocess.run([str(target/'JRController.exe'),'--self-check',str(report)],
+                                  timeout=35,creationflags=subprocess.CREATE_NO_WINDOW)
+            data=json.loads(report.read_text(encoding='utf-8'))
+        except (OSError,ValueError,subprocess.TimeoutExpired) as exc:
+            logging.exception('Installation check failed')
+            raise RuntimeError('程序自检未完成，请重启电脑后重新运行安装包；可查看安装日志。') from exc
+        logging.info('Application check: %s',data)
+        return result.returncode==0 and isinstance(data,dict) and data.get('ok') is True
+
+def run_driver(payload,repair=False):
+    args=[str(payload/'ViGEmBus_1.22.0_x64_x86_arm64.exe')]
+    # The official 1.22.0 EXE is an Advanced Installer bootstrapper, not WiX Burn.
+    args+=['/exenoui']
+    if repair:args+=['/fomus','//']
+    args+=['/qn','/norestart']
+    result=subprocess.run(args,creationflags=subprocess.CREATE_NO_WINDOW,timeout=300)
+    logging.info('Driver repair=%s exit=%s',repair,result.returncode)
+    return driver_result(result.returncode)
 
 def driver_installed():
     try:
@@ -49,16 +80,16 @@ def is_running():
     return bool(handle)
 
 def install(payload,startup,progress):
+    check_system()
     if is_running():raise RuntimeError('请先退出正在运行的 JR 控制器，再点击安装')
-    reboot=False
-    if not driver_installed():
-        progress('正在安装手柄驱动…')
-        result=subprocess.run([str(payload/'ViGEmBus_1.22.0_x64_x86_arm64.exe'),'/quiet','/norestart'],creationflags=subprocess.CREATE_NO_WINDOW)
-        reboot=driver_result(result.returncode)
-    progress('正在安装控制器程序…')
+    reboot=False;existing=driver_installed()
+    progress(1,'检查手柄驱动')
+    if not existing:reboot=run_driver(payload)
+    progress(2,'安装控制器程序和离线使用说明')
     target=install_directory();target.mkdir(parents=True,exist_ok=True)
     shutil.copytree(payload/'app',target,dirs_exist_ok=True)
     shutil.copy2(payload/'ThirdPartyNotices.txt',target/'ThirdPartyNotices.txt')
+    shutil.copy2(target/'_internal/first_steps.html',target/'first_steps.html')
     shutil.copy2(sys.executable,target/'Uninstall.exe')
     for path in shortcut_paths():shortcut(path,target/'JRController.exe')
     with winreg.CreateKeyEx(winreg.HKEY_LOCAL_MACHINE,RUN_KEY,0,winreg.KEY_SET_VALUE|winreg.KEY_WOW64_64KEY) as key:
@@ -67,10 +98,18 @@ def install(payload,startup,progress):
             try:winreg.DeleteValue(key,'JRController')
             except FileNotFoundError:pass
     with winreg.CreateKeyEx(winreg.HKEY_LOCAL_MACHINE,UNINSTALL_KEY,0,winreg.KEY_SET_VALUE|winreg.KEY_WOW64_64KEY) as key:
-        for name,value in {'DisplayName':APP_NAME,'DisplayVersion':'0.4.0','Publisher':'JR Controller Project',
+        for name,value in {'DisplayName':APP_NAME,'DisplayVersion':VERSION,'Publisher':'JR Controller Project',
                            'InstallLocation':str(target),'DisplayIcon':str(target/'JRController.exe'),
                            'UninstallString':f'"{target / "Uninstall.exe"}" --uninstall'}.items():
             winreg.SetValueEx(key,name,0,winreg.REG_SZ,value)
+    progress(3,'检查 Xbox 和 RUNNING TRAIN 虚拟手柄')
+    if not reboot and not verify_app(target):
+        if existing:
+            progress(3,'修复已有手柄驱动后重新检查')
+            reboot=run_driver(payload,repair=True)
+        if not reboot and (not existing or not verify_app(target)):
+            raise RuntimeError('程序已复制，但手柄自检未通过。请重启电脑后重试安装；仍失败时提供安装日志。')
+    progress(4,'需要重启后完成驱动检查' if reboot else '安装与虚拟手柄检查通过')
     return reboot
 
 def uninstall():
@@ -99,31 +138,62 @@ def uninstall():
     return deferred
 
 def main():
-    root=tk.Tk();root.title('JR 控制器安装');root.geometry('460x240');root.resizable(False,False)
+    log_directory=Path(os.environ['ProgramData'])/'JRController'
+    try:
+        log_directory.mkdir(parents=True,exist_ok=True)
+        log_path=log_directory/'setup.log'
+        with log_path.open('a',encoding='utf-8'):pass
+    except OSError:log_path=Path(tempfile.gettempdir())/'JRController-setup.log'
+    logging.basicConfig(filename=log_path,level=logging.INFO,encoding='utf-8',
+                        format='%(asctime)s %(levelname)s %(message)s',force=True)
+    logging.info('Setup %s started; uninstall=%s',VERSION,'--uninstall' in sys.argv)
+    root=tk.Tk();root.title('JR 控制器安装');root.geometry('620x510');root.resizable(False,False)
+    root.configure(bg='#F3F6FC')
     removing='--uninstall' in sys.argv
-    status=tk.StringVar(value='将安装控制程序和所需手柄驱动' if not removing else '卸载控制程序，保留共用手柄驱动')
+    status=tk.StringVar(value='无需 Python，无需联网。请先退出游戏和旧版 JR 控制器。' if not removing else '卸载控制程序，保留共用手柄驱动')
     startup=tk.BooleanVar(value=True);events=queue.Queue()
-    ttk.Label(root,text='JR 控制器'+('卸载' if removing else '安装'),font=('Microsoft YaHei',18)).pack(pady=18)
-    ttk.Label(root,textvariable=status,wraplength=420).pack(pady=10)
+    body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
+    ttk.Label(body,text='JR 控制器'+('卸载' if removing else '完整安装'),font=('Microsoft YaHei',21,'bold')).pack(anchor='w')
+    ttk.Label(body,text='Windows 10 / 11 · 64 位 · '+VERSION).pack(anchor='w',pady=(3,16))
+    steps=[tk.StringVar(value=text) for text in ('1  检查电脑与手柄驱动','2  安装程序与离线说明','3  验证两个游戏模式','4  完成安装，连接硬件')]
+    if not removing:
+        for text in steps:ttk.Label(body,textvariable=text,font=('Microsoft YaHei',11)).pack(anchor='w',pady=5)
+    bar=ttk.Progressbar(body,maximum=4);bar.pack(fill='x',pady=12)
+    ttk.Label(body,textvariable=status,wraplength=565,justify='left').pack(anchor='w',pady=8)
     if not removing:ttk.Checkbutton(root,text='登录后自动运行，插入即连接',variable=startup).pack(pady=5)
     def begin():
         button.config(state='disabled');choice=startup.get()
         root.protocol('WM_DELETE_WINDOW',lambda:status.set('正在处理，请稍候…'))
         def worker():
             try:
-                restart=uninstall() if removing else install(Path(sys._MEIPASS),choice,lambda text:events.put(('status',text)))
+                restart=uninstall() if removing else install(Path(sys._MEIPASS),choice,lambda step,text:events.put(('progress',(step,text))))
                 events.put(('done',restart))
-            except Exception as exc:events.put(('error',str(exc)))
+            except Exception as exc:
+                logging.exception('Setup failed');events.put(('error',str(exc)))
         threading.Thread(target=worker,daemon=True).start()
-    button=ttk.Button(root,text='卸载' if removing else '安装',command=begin);button.pack(pady=14)
+    row=ttk.Frame(root,padding=(24,10));row.pack(fill='x')
+    button=ttk.Button(row,text='卸载' if removing else '一键安装',command=begin);button.pack(side='right')
+    def show_log():
+        try:os.startfile(log_path)
+        except OSError:status.set('日志位置：'+str(log_path))
+    def show_guide():
+        guide=install_directory()/'first_steps.html'
+        if not guide.exists():guide=Path(sys._MEIPASS)/'app/_internal/first_steps.html'
+        try:os.startfile(guide)
+        except OSError:status.set('请安装后在程序内点击“使用说明”。')
+    ttk.Button(row,text='查看安装日志',command=show_log).pack(side='left')
+    if not removing:ttk.Button(row,text='使用说明',command=show_guide).pack(side='left',padx=8)
     def tick():
         while not events.empty():
             kind,value=events.get_nowait()
-            if kind=='status':status.set(value)
+            if kind=='progress':
+                step,text=value;bar['value']=step-1;steps[step-1].set(f'{step}  {text}');status.set(text)
             elif kind=='error':
-                status.set(value);button.config(state='normal');root.protocol('WM_DELETE_WINDOW',root.destroy)
+                status.set(value);button.config(text='重试',state='normal');root.protocol('WM_DELETE_WINDOW',root.destroy)
             elif kind=='done':
-                status.set(('卸载完成' if removing else '安装完成，请从桌面打开 JR Controller')+('；请重启电脑' if value else ''))
+                bar['value']=4
+                logging.info('Setup completed; restart=%s',value)
+                status.set('卸载完成' if removing else ('安装完成。请先重启电脑，再从桌面打开 JR Controller；重启后程序将检查驱动连接。' if value else '安装与手柄自检通过！从桌面打开 JR Controller，连接 USB，选好游戏模式，再启动游戏。'))
                 button.config(text='完成',state='normal',command=root.destroy)
                 root.protocol('WM_DELETE_WINDOW',root.destroy)
         root.after(100,tick)

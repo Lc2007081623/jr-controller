@@ -21,7 +21,8 @@ def main():
     run('-m','unittest','discover','-s','test_tools','-p','test_*.py')
     run('-m','PyInstaller','--noconfirm','--onedir','--windowed','--name','JRController',
         '--collect-all','vgamepad','--distpath','release/app','--workpath','build/pyinstaller',
-        '--specpath','build','test_tools/controller_app.py')
+        '--specpath','build','--add-data',str(ROOT/'installer/first_steps.html')+';.',
+        'test_tools/controller_app.py')
     bundle=(ROOT/'release/app/JRController').resolve()
     old=(bundle/'_internal/vgamepad/win/vigem/install').resolve()
     if old.exists():

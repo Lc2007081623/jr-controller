@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JR 控制器 · 开始使用</title><style>
+body{margin:0;background:#f2f5fa;color:#18283e;font:16px/1.8 "Microsoft YaHei UI",sans-serif}main{max-width:820px;margin:40px auto;padding:32px;background:white;border-radius:16px}h1{margin:0}h2{font-size:21px;margin-top:30px}li{margin:10px 0}aside{padding:16px;background:#eaf1fc;border-radius:10px}table{border-collapse:collapse;width:100%}td,th{padding:12px;border-bottom:1px solid #dde5ef;text-align:left}small{color:#61728a}@media(max-width:700px){main{margin:12px;padding:20px}}
+</style><main><small>JR CONTROLLER / 0.4.1 / Windows 10、11 64 位</small>
+<h1>接上控制器，开始驾驶</h1><p>适用于配套、已烧录固件的 ESP32-C3 控制器。安装包已包含运行环境和手柄驱动，不需要 Python，不需要额外下载依赖。</p>
+<h2>1. 安装到电脑</h2><ol><li>退出旧版 JR 控制器和正在运行的游戏。</li><li>双击 <b>JRControllerSetup.exe</b>。Windows 询问是否允许更改设备时，需要管理员同意。若系统拦截安装，请联系提供安装包的人核实文件，不要关闭系统防护。</li><li>点击“一键安装”。等待程序安装驱动、复制程序并检查两个虚拟手柄模式。</li><li>若提示需要重启，先保存电脑上其他工作并重启，再从桌面打开 <b>JR Controller</b>。未要求重启时，可直接从桌面打开。</li></ol>
+<aside>“登录后自动运行”表示下次登录时最小化运行；安装完成当次请从桌面打开程序。驱动检查不需要连接实体控制器，也不代表游戏已经识别。</aside>
+<h2>2. 用 USB 连接硬件</h2><ol><li>使用能传输数据的 USB 线，连接控制器配套的原生 USB 接口。</li><li>打开 JR Controller。正常情况下会自动连接，不需要选择 COM 口。</li><li>拨动手柄、换向开关并按四个按钮，查看软件中的档位、F/N/R 和按钮亮起状态。</li></ol>
+<aside>连接后立即跟随实体当前位置；断线恢复也是如此。软件的“已就绪”表示控制器输出就绪，游戏识别需要下一步确认。</aside>
+<h2>3. 需要时进行校准</h2><p>成品已校准且显示准确时，可以跳过本步。若显示未校准或方向不符，点击“校准与设置”。校准期间暂停游戏输入。</p>
+<ol><li><b>主手柄：</b>点击“开始”，依次拨到 EB、B8～B1、N、P1～P5；每个卡位停稳后点击“采集卡位”，全部 15 点采集后点击“保存”。</li><li><b>换向器：</b>点击“开始”，依次将开关拨到你希望的 F、N、R，分别采集并保存；N 必须是中间断开位置。</li><li><b>按钮：</b>点击“开始”，按住希望用作 A 的实体按钮并采集；依次学习 B、X、Y 四个不同按钮，最后保存。</li><li>保存成功后关闭校准窗口，主窗口恢复连接。校准保存在控制器中，断电保留。未点击保存就关闭，会丢弃本次采集。</li></ol>
+<h2>4. 选择游戏，再启动游戏</h2><table><tr><th>游戏</th><th>主窗口选择</th><th>注意</th></tr><tr><td>JR EAST Train Simulator</td><td>JR EAST（Xbox）</td><td>先打开本程序，再启动游戏。</td></tr><tr><td>RUNNING TRAIN</td><td>RUNNING TRAIN（ZUIKI）</td><td>使用 Pro 换向器映射。Steam 库中右键游戏 → 属性 → 控制器 → 禁用 Steam 输入。</td></tr></table>
+<p>切换游戏模式会更换虚拟设备。如果游戏已经启动但没有响应，请保持 JR Controller 运行并重启游戏。进入驾驶画面，确认游戏 HUD 跟随主手柄、换向器和按钮。按钮的具体用途由游戏决定。</p>
+<h2>遇到问题</h2><table><tr><th>现象</th><th>下一步</th></tr><tr><td>一直等待插入控制器</td><td>换一根数据线或 USB 接口，关闭串口调试工具；同时连接多个开发板时，只保留这台控制器。</td></tr><tr><td>驱动未就绪</td><td>重启电脑。仍失败时，退出 JR Controller 后重新运行本安装包；安装器会尝试检查、修复已有驱动。</td></tr><tr><td>传感器异常或未校准</td><td>未校准时按上面的步骤校准；传感器异常请联系硬件提供者检查磁铁和连接。</td></tr><tr><td>软件有变化，游戏没反应</td><td>核对游戏模式；RUNNING TRAIN 禁用 Steam Input；保持软件开启后重启游戏。</td></tr><tr><td>更新提示旧程序正在运行</td><td>从任务栏或桌面打开 JR Controller，点击“退出”，再回安装器重试。点击窗口右上角关闭也会退出程序。</td></tr><tr><td>安装失败</td><td>在安装器点击“查看安装日志”，把日志交给提供安装包的人。日志位置：C:\ProgramData\JRController\setup.log。</td></tr></table>
+<h2>以后使用</h2><p>保持软件运行，插上硬件，选择对应游戏模式后启动游戏。无需重复安装或重新校准。卸载从 Windows“已安装的应用”进入；共用的 ViGEmBus 驱动会保留。</p></main></html>
