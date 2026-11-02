@@ -69,10 +69,13 @@ def main():
                 # The physical switch may change the hypothesis only at handle N.
                 if notch=='N':direction=sample.reverser
             device.set(notch,buttons,direction)
-            state=(notch,buttons,direction,gate.armed)
+            state=(notch,buttons,direction,gate.armed,gate.reason,
+                   sample.notch if sample else None,sample.reverser if sample else None)
             if state!=last:
                 print(json.dumps({'notch':notch,'buttons':buttons,'reverser':direction,
-                                  'armed':gate.armed,'reason':gate.reason}),flush=True)
+                                  'armed':gate.armed,'reason':gate.reason,
+                                  'input_notch':sample.notch if sample else None,
+                                  'input_reverser':sample.reverser if sample else None}),flush=True)
                 last=state
             time.sleep(.02)
     finally:
