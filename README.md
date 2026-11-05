@@ -4,6 +4,15 @@ ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项�
 
 当前桌面安装包：**0.4.1（完整离线安装版）**，详见[版本记录](CHANGELOG.md)。
 
+2026-11-05 进度同步：
+
+- **Steam JR EAST 体验版已接通**：软件选择 JR EAST（Xbox），Steam 开启 Steam Input 并应用官方 **Tsukasa Mascon** 布局；用户确认主手柄与 F/N/R 正常。四按钮具体功能和所有中间档位尚未逐项记录，详见 [Steam 版接入验证](docs/Steam版JRETS接入验证.md)。本次不需要更改固件。
+- **RUNNING TRAIN**：沿用已验证的 ZUIKI Pro 输出模式，并关闭 Steam Input。
+- **Arduino IDE 固件**：提供可直接打开的 C3 草图及导出脚本，见 [Arduino 上传说明](firmware/arduino/README.md)。校准保存在设备 NVS；正常上传不擦除全部 Flash 时保留，新板需校准。
+- **BVE5.8／6**：已确认存在开源输入插件方案，计划研究直接读取本控制器串口的专用插件；尚未开发或实测，当前安装包不宣称支持。参考 [NumerousControllerInterface](https://github.com/kusaanko/BveNumerousControllerInterface) 和 [ZUIKI 输入插件](https://github.com/ricald/BveZuikiDenshadeGoControllerInterface)。
+
+Steam JR 体验版与下文早期 JR 版本的输入路径不同；请优先按上述 Steam 布局设置操作。
+
 Windows 完整离线安装包：`release/JRControllerSetup.exe`（0.4.1）。Windows 10/11 Intel/AMD 64 位电脑无需 Python 或联网下载依赖；安装器包含运行环境与官方手柄驱动，检查两个游戏输出模式，附离线使用说明及安装日志。需要时提示重启。配套硬件由提供者预先烧录。详见 [新电脑安装与使用](installer/README.md)。
 
 2026-11-01 开发更新：新增 C3 载板环境 `c3_as5600_controller`，点阵 DIN4/CS3/CLK2，AS5600 SDA6/SCL5，三档 F/N/R、换向器校准与四个 A/B/X/Y 按钮。接线及校准步骤见 [C3 接线与验证](docs/C3接线与验证.md)。下文 S3 接线与历史参考图不用于 C3 载板。
