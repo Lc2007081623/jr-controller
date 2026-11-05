@@ -34,7 +34,7 @@ flowchart LR
 | GPIO10换向前进 | 改为XInput X轴保持后，用户确认验证成功 |
 | MAX7219显示 | 已接入第一版；其他按钮待后续实现 |
 | 机械回差 | 用户确认仍存在，下一阶段待解决 |
-| PCB封装、原生EDA工程与生产文件 | 未完成；当前图纸为录入参考 |
+| 机械模型、原理图、PCB 设计文件 | 不在公开仓库提供 |
 
 ## 运行测试程序
 
@@ -90,7 +90,6 @@ XInput输出为 `round(Y × 32767)`，X轴保持0。表中数值来自该版本�
 
 具体板卡排针、供电路径与机械尺寸仍需实物核对。A0图纸采用主控USB供电、显示独立5V、仅共地的安排。
 
-![模拟采样参考](hardware/schematic_images/02_电源与模拟采样.png)
 
 ## 目录
 
@@ -101,8 +100,5 @@ XInput输出为 `round(Y × 32767)`，X轴保持0。表中数值来自该版本�
 | `docs/第一版验证.md` | 历史GPIO5/OLED接线 |
 | `firmware/` | ESP32-S3 ADC3 + MAX7219固件，保留独立点阵测试与旧OLED环境 |
 | `test_tools/` | 手动XInput档位测试、只读诊断、依赖说明 |
-| `hardware/schematic_images/` | 5页PNG/SVG原理图参考、BOM和逐引脚表 |
-| `hardware/draw_schematic.py` | 图纸生成脚本，使用Pillow与Windows微软雅黑字体 |
-| 根目录SolidWorks/STL文件 | 现有机械模型，未宣称已完成尺寸/装配验证 |
 
 游戏文件、提取数据、本机运行日志、第三方依赖与私人附件不包含在仓库中。
