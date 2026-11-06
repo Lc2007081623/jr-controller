@@ -6,30 +6,28 @@ ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项�
 
 [下载安装包（v0.6.0）](https://github.com/Lc2007081623/jr-controller/releases/tag/v0.6.0)。配套的 `.sha256` 文件可用于核对安装包完整性。
 
-TRAIN CREW：选择「TRAIN CREW（官方接口）」模式，在游戏输入设置启用「外部输入/输出」。A气笛、B电笛、X为EB装置警报确认、Y为联络蜂鸣；实体B7/B8保持游戏B6常用最大制动。无需更改固件。详见[接入说明](docs/TRAIN_CREW接入.md)。
+## 安装与使用
 
-2026-11-06本机验收：0.6.0正式用户版已安装，四模式自检通过；TRAIN CREW 1261次列车已读回实际档位，用户确认主手柄、F/N/R及四按钮全部正常。
+1. 从上方发行页面下载 `JRControllerSetup.exe`，退出旧版 JR Controller 和游戏后运行安装包。Windows 10/11 64 位无需另装 Python；安装器会检查并按需安装手柄驱动。
+2. 安装时可选择 BVE 5、BVE 6 的游戏目录；不使用 BVE 时可以留空。按提示完成安装，需要时重启电脑。
+3. 用数据线连接已烧录、已校准的控制器，打开 JR Controller，选择下表中的游戏模式，然后启动游戏。若未校准，可在程序中打开“校准与设置”。
+4. 连接或恢复连接后，游戏输入会跟随实体手柄、换向器和按钮的当前位置。开始驾驶前请确认手柄位置及游戏内显示。
 
-2026-11-05 进度同步：
+| 游戏 | 程序模式 | 游戏设置与操作 |
+| --- | --- | --- |
+| JR EAST Train Simulator（Steam） | JR EAST（Xbox） | 在 Steam 启用 Steam Input，并应用官方 Tsukasa Mascon 布局。 |
+| JR EAST Train Simulator（已验证的非 Steam 版） | JR EAST（Xbox） | 保持控制器程序运行后启动游戏；不同版本和车型需另行验证。 |
+| RUNNING TRAIN | RUNNING TRAIN（ZUIKI） | 在 Steam 中禁用该游戏的 Steam Input。 |
+| BVE 5.8 / 6 | BVE 5/6（专用插件） | 在游戏 Preferences → Input device 中勾选 JR Controller；BVE 5 和 6 分别使用对应架构插件。详见 [BVE 接入说明](docs/BVE接入验证.md)。 |
+| TRAIN CREW | TRAIN CREW（官方接口） | 游戏输入设备设置启用“外部设备输入/输出”。建议先选择控制器模式，再启动游戏。详见 [TRAIN CREW 接入说明](docs/TRAIN_CREW接入.md)。 |
 
-- **Steam JR EAST 体验版已接通**：软件选择 JR EAST（Xbox），Steam 开启 Steam Input 并应用官方 **Tsukasa Mascon** 布局；用户确认主手柄与 F/N/R 正常。四按钮具体功能和所有中间档位尚未逐项记录，详见 [Steam 版接入验证](docs/Steam版JRETS接入验证.md)。本次不需要更改固件。
-- **RUNNING TRAIN**：沿用已验证的 ZUIKI Pro 输出模式，并关闭 Steam Input。
-- **Arduino IDE 固件**：提供可直接打开的 C3 草图及导出脚本，见 [Arduino 上传说明](firmware/arduino/README.md)。校准保存在设备 NVS；正常上传不擦除全部 Flash 时保留，新板需校准。
-- **BVE5.8／6（2026-11-06）**：桌面程序新增 BVE 模式，通过专用 32/64 位输入插件直接输出绝对档位、换向与四按钮，无需刷固件。用户已确认 BVE 6 内房线 N/P1/P3/B5/EB、BVE 5 京成线相同档位及 F/N/R 正常。四按钮游戏效果仍待逐项确认。0.5.0 安装包已集成两套插件，安装时可选游戏目录。详见 [BVE 接入验证](docs/BVE接入验证.md)。
+TRAIN CREW 模式下，A 为气笛，B 为电笛，X 为 EB 警报确认，Y 为联络蜂鸣；实体 B7/B8 对应游戏 B6 常用最大制动，EB 单独保留。BVE 模式下，A 为鸣笛，B 为 ATS 确认，X 为 EB 确认，Y 为 ATS 复位。
 
-Steam JR 体验版与下文早期 JR 版本的输入路径不同；请优先按上述 Steam 布局设置操作。
+本机已验证 TRAIN CREW 的主手柄、F/N/R 和四按钮，以及 BVE 5/6 部分档位和换向；BVE 四按钮的线路效果及其他车型尚未逐一验证。安装包完成四模式自检；详见[安装说明](installer/README.md)和[版本记录](CHANGELOG.md)。
 
-Windows 完整离线安装包：`release/JRControllerSetup.exe`（0.6.0）。Windows 10/11 Intel/AMD 64 位电脑无需 Python 或联网下载依赖；安装器包含运行环境与官方手柄驱动，检查四个游戏输出模式，附离线使用说明及安装日志。需要时提示重启。配套硬件由提供者预先烧录。详见 [新电脑安装与使用](installer/README.md)。
+当前 C3 载板的接线、校准和固件资料分别见 [C3 接线与验证](docs/C3接线与验证.md)及 [Arduino 上传说明](firmware/arduino/README.md)。校准保存在控制器中；正常更新固件且不擦除全部 Flash 时保留。
 
-2026-11-01 开发更新：新增 C3 载板环境 `c3_as5600_controller`，点阵 DIN4/CS3/CLK2，AS5600 SDA6/SCL5，三档 F/N/R、换向器校准与四个 A/B/X/Y 按钮。接线及校准步骤见 [C3 接线与验证](docs/C3接线与验证.md)。下文 S3 接线与历史参考图不用于 C3 载板。
-
-2026-10-24更新：AS5600已接入现有ESP32-S3完整控制器，SDA7/SCL15，配置为 `s3_as5600_controller`；24项软件测试及实机角度读取通过，用户反馈接入效果正常，并确认机械回差问题已经解决。使用时需单独进行15点校准，操作见[AS5600控制器验证](docs/AS5600控制器验证.md)。逐档游戏验证待记录，C3迁移尚未实施。
-
-已在 **中央线 E233 系 0 番台**上验证：Windows 虚拟 XInput 手柄可直接选择 **P1、P3、B5**，无需键盘逐档调整，也不依赖 Steam Input 映射。
-
-**2026-10-21：用户确认主档位与换向验证成功，第一版结束。** 当时遗留的机械回差已于2026-10-24由用户确认解决，历史记录见[第一版验收记录](docs/第一版验收记录.md)。
-
-## 技术路线
+## 第一版技术路线（历史记录）
 
 ```mermaid
 flowchart LR
@@ -41,7 +39,7 @@ flowchart LR
 
 第一版验证配置：**GPIO3电位器 + MAX7219点阵（DIN6、CS5、CLK4）**，15点校准已保存；GPIO10按钮选择前进，XInput X轴保持换向、Y轴输出主档位。牵引只显示数字，制动显示数字并点亮最右下角LED，N/EB显示N/E。22项自动测试通过，用户已确认游戏链路验证成功。操作详见[点阵与GPIO3验证](docs/点阵与GPIO3验证.md)。
 
-## 已验证与待完成
+## 第一版验证记录
 
 | 项目 | 状态 |
 | --- | --- |
@@ -55,7 +53,7 @@ flowchart LR
 | 机械回差 | 2026-10-24用户确认已解决 |
 | 机械模型、原理图、PCB 设计文件 | 不在公开仓库提供 |
 
-## 运行测试程序
+## 第一版 XInput 测试程序
 
 环境：Windows、Python（本机实测为3.12）、Tkinter、用户安装的 ViGEmBus 驱动。ViGEmBus 已结束维护，使用前请阅读[作者说明](https://docs.nefarius.at/projects/ViGEm/End-of-Life/)。本仓库不打包驱动或第三方库。
 
@@ -78,7 +76,7 @@ python -m pip install -r test_tools/requirements.txt
 
 测试程序没有修改游戏文件或内存。`game_input_probe.py` 仅只读检查本次分析版本的进程状态，地址与版本相关，不能当作跨版本的公共 API。
 
-## 绝对档位映射
+## 第一版 XInput 档位映射
 
 静态分析发现：游戏存在直接读取 `XInputGetState`、将左摇杆 Y 归一化后转换成牵引/制动目标值的分支。一般档位分支不是“加一档/减一档”，而是写入目标档位。
 
@@ -94,7 +92,7 @@ python -m pip install -r test_tools/requirements.txt
 | B2 | +0.205 |  |  |
 | B1 | +0.105 |  |  |
 
-XInput输出为 `round(Y × 32767)`，X轴保持0。表中数值来自该版本内置阈值；当前只有P1/P3/B5由用户确认，其他档位、车型特殊分支和外部配置覆盖都需实测。
+第一版档位测试的 XInput 输出为 `round(Y × 32767)`，当时测试时 X 轴保持0；当前正式程序使用 X 轴输出换向。表中数值来自该版本内置阈值；当前只有P1/P3/B5由用户确认，其他档位、车型特殊分支和外部配置覆盖都需实测。
 
 详见[技术总结](docs/技术总结.md)。
 
@@ -120,4 +118,4 @@ XInput输出为 `round(Y × 32767)`，X轴保持0。表中数值来自该版本�
 | `firmware/` | ESP32-S3 ADC3 + MAX7219固件，保留独立点阵测试与旧OLED环境 |
 | `test_tools/` | 手动XInput档位测试、只读诊断、依赖说明 |
 
-游戏文件、提取数据、本机运行日志、第三方依赖与私人附件不包含在仓库中。
+游戏文件、提取数据、本机运行日志、驱动安装包与私人附件不包含在仓库中。TRAIN CREW 官方 SDK 的 DLL 按作者许可随项目提供，详见其附带说明。
