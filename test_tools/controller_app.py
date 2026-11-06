@@ -29,7 +29,7 @@ class App:
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
         header=tk.Frame(root,bg=INK,padx=28,pady=20);header.pack(fill='x')
         tk.Label(header,text='JR / CONTROLLER',bg=INK,fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
-        tk.Label(header,text='CONTROL DESK  /  0.6.0',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
+        tk.Label(header,text='CONTROL DESK  /  1.0.0',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
         tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
         body=ttk.Frame(root,padding=(26,20));body.pack(fill='both',expand=True)
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,14))

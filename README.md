@@ -2,9 +2,9 @@
 
 ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项目，保留第一版电位器方案。
 
-当前桌面安装包：**0.6.0（含 TRAIN CREW 官方接口与 BVE 5/6 插件）**，详见[版本记录](CHANGELOG.md)。
+当前桌面安装包：**1.0.0（含 TRAIN CREW 官方接口与 BVE 5/6 插件）**，详见[版本记录](CHANGELOG.md)。
 
-[下载安装包（v0.6.0）](https://github.com/Lc2007081623/jr-controller/releases/tag/v0.6.0)。配套的 `.sha256` 文件可用于核对安装包完整性。
+[下载安装包（v1.0.0）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.0.0)。配套的 `.sha256` 文件可用于核对安装包完整性。
 
 ## 安装与使用
 
