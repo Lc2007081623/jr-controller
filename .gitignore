@@ -49,3 +49,6 @@ inspect_controller.py
 *.sch
 *.gbr
 *.gerber
+
+# Local document exports and rendering dependencies
+/.docx-work/

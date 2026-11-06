@@ -2,18 +2,24 @@
 
 ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项目，保留第一版电位器方案。
 
-当前桌面安装包：**0.4.1（完整离线安装版）**，详见[版本记录](CHANGELOG.md)。
+当前桌面安装包：**0.6.0（含 TRAIN CREW 官方接口与 BVE 5/6 插件）**，详见[版本记录](CHANGELOG.md)。
+
+[下载安装包（v0.6.0）](https://github.com/Lc2007081623/jr-controller/releases/tag/v0.6.0)。配套的 `.sha256` 文件可用于核对安装包完整性。
+
+TRAIN CREW：选择「TRAIN CREW（官方接口）」模式，在游戏输入设置启用「外部输入/输出」。A气笛、B电笛、X为EB装置警报确认、Y为联络蜂鸣；实体B7/B8保持游戏B6常用最大制动。无需更改固件。详见[接入说明](docs/TRAIN_CREW接入.md)。
+
+2026-11-06本机验收：0.6.0正式用户版已安装，四模式自检通过；TRAIN CREW 1261次列车已读回实际档位，用户确认主手柄、F/N/R及四按钮全部正常。
 
 2026-11-05 进度同步：
 
 - **Steam JR EAST 体验版已接通**：软件选择 JR EAST（Xbox），Steam 开启 Steam Input 并应用官方 **Tsukasa Mascon** 布局；用户确认主手柄与 F/N/R 正常。四按钮具体功能和所有中间档位尚未逐项记录，详见 [Steam 版接入验证](docs/Steam版JRETS接入验证.md)。本次不需要更改固件。
 - **RUNNING TRAIN**：沿用已验证的 ZUIKI Pro 输出模式，并关闭 Steam Input。
 - **Arduino IDE 固件**：提供可直接打开的 C3 草图及导出脚本，见 [Arduino 上传说明](firmware/arduino/README.md)。校准保存在设备 NVS；正常上传不擦除全部 Flash 时保留，新板需校准。
-- **BVE5.8／6**：已确认存在开源输入插件方案，计划研究直接读取本控制器串口的专用插件；尚未开发或实测，当前安装包不宣称支持。参考 [NumerousControllerInterface](https://github.com/kusaanko/BveNumerousControllerInterface) 和 [ZUIKI 输入插件](https://github.com/ricald/BveZuikiDenshadeGoControllerInterface)。
+- **BVE5.8／6（2026-11-06）**：桌面程序新增 BVE 模式，通过专用 32/64 位输入插件直接输出绝对档位、换向与四按钮，无需刷固件。用户已确认 BVE 6 内房线 N/P1/P3/B5/EB、BVE 5 京成线相同档位及 F/N/R 正常。四按钮游戏效果仍待逐项确认。0.5.0 安装包已集成两套插件，安装时可选游戏目录。详见 [BVE 接入验证](docs/BVE接入验证.md)。
 
 Steam JR 体验版与下文早期 JR 版本的输入路径不同；请优先按上述 Steam 布局设置操作。
 
-Windows 完整离线安装包：`release/JRControllerSetup.exe`（0.4.1）。Windows 10/11 Intel/AMD 64 位电脑无需 Python 或联网下载依赖；安装器包含运行环境与官方手柄驱动，检查两个游戏输出模式，附离线使用说明及安装日志。需要时提示重启。配套硬件由提供者预先烧录。详见 [新电脑安装与使用](installer/README.md)。
+Windows 完整离线安装包：`release/JRControllerSetup.exe`（0.6.0）。Windows 10/11 Intel/AMD 64 位电脑无需 Python 或联网下载依赖；安装器包含运行环境与官方手柄驱动，检查四个游戏输出模式，附离线使用说明及安装日志。需要时提示重启。配套硬件由提供者预先烧录。详见 [新电脑安装与使用](installer/README.md)。
 
 2026-11-01 开发更新：新增 C3 载板环境 `c3_as5600_controller`，点阵 DIN4/CS3/CLK2，AS5600 SDA6/SCL5，三档 F/N/R、换向器校准与四个 A/B/X/Y 按钮。接线及校准步骤见 [C3 接线与验证](docs/C3接线与验证.md)。下文 S3 接线与历史参考图不用于 C3 载板。
 

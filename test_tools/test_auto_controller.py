@@ -6,8 +6,20 @@ from types import SimpleNamespace
 from serial_protocol import AutoDriveGate,parse_sample
 from test_serial_protocol import frame
 from controller_app import controller_ports,App
+from output_profiles import BVE,TRAIN_CREW
 
 class AutomaticTests(unittest.TestCase):
+    def test_bve_heartbeat_even_with_unchanged_notch_and_release_on_pause(self):
+        for mode in (BVE,TRAIN_CREW):
+            app=Mock();app.output_mode=mode;app.closing=False;app.calibration=None
+            app.events=queue.Queue();app.last_sample_at=time.monotonic()
+            app.gate.sample=self.sample(notch='P3',reverser='F');app.gate.armed=True
+            app.gate.update.return_value='P3';app.pad.notch='P3';app.pad.reverser='F'
+            App.tick(app)
+            app.pad.set.assert_not_called();app.pad.refresh.assert_called_once_with(True)
+            App.release(app)
+            app.pad.refresh.assert_called_with(False)
+
     def sample(self,**kw):
         values=dict(board='C3',reverser='N');values.update(kw)
         return parse_sample(frame(**values))

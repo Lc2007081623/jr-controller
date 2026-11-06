@@ -18,12 +18,21 @@ def main():
     os.chdir(ROOT)
     if hashlib.sha256(DRIVER.read_bytes()).hexdigest()!=DRIVER_SHA256:
         raise RuntimeError('Driver installer does not match the verified official asset')
+    run('bve_plugin/build.py','--test')
+    run('train_crew/build.py')
     run('-m','unittest','discover','-s','test_tools','-p','test_*.py')
     run('-m','PyInstaller','--noconfirm','--onedir','--windowed','--name','JRController',
         '--collect-all','vgamepad','--distpath','release/app','--workpath','build/pyinstaller',
         '--specpath','build','--add-data',str(ROOT/'installer/first_steps.html')+';.',
+        '--add-data',str(ROOT/'installer/bve_guide.html')+';.',
+        '--add-data',str(ROOT/'installer/train_crew_guide.html')+';.',
+        '--add-data',str(ROOT/'build/train_crew')+';train_crew',
         'test_tools/controller_app.py')
     bundle=(ROOT/'release/app/JRController').resolve()
+    for version in ('BVE5','BVE6'):
+        destination=bundle/'BVE Plugins'/version
+        destination.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(ROOT/'build/bve'/version/'JRController.Bve.dll',destination/'JRController.Bve.dll')
     old=(bundle/'_internal/vgamepad/win/vigem/install').resolve()
     if old.exists():
         if not old.is_relative_to(bundle):raise RuntimeError('Unexpected build path')

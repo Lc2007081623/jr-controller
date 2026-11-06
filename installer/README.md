@@ -1,16 +1,20 @@
 # Windows 简化安装包
 
-## 当前完整安装包 0.4.1
+## 当前完整安装包 0.6.0
+
+新增 TRAIN CREW（官方接口）模式：游戏输入设置启用外部输入/输出，直接输出主手柄、换向和四按钮；安装包内置官方SDK和.NET桥接程序，不需另配虚拟手柄。B7/B8映射到游戏B6常用最大。详情见 `train_crew_guide.html`。
+
+BVE 5/6 已集成专用插件：可选游戏目录，留空时插件仅放在安装目录的 `BVE Plugins/BVE5`、`BVE Plugins/BVE6` 中，随后按离线说明手动复制。BVE 游戏需自行安装并在 Input device 设置中启用 JR Controller。
 
 给新用户的唯一安装文件是 `release/JRControllerSetup.exe`，约 27MB。不需要提供 Python、pip、vgamepad 或单独的 DLL。支持 Windows 10/11 Intel/AMD 64 位，硬件按已烧录配套固件的 C3 成品处理；游戏本身由用户安装。
 
-使用顺序：退出游戏与旧 JR 控制器 → 双击安装包并同意管理员授权 → 点击“一键安装” → 等待驱动安装、程序复制和两个虚拟手柄自检 → 如提示则重启电脑 → 从桌面打开 JR Controller → USB 连接硬件 → 选择游戏模式 → 启动游戏。RUNNING TRAIN 关闭 Steam Input。校准或故障处理可在程序中点击“使用说明”，无需联网。
+使用顺序：退出游戏与旧 JR 控制器 → 双击安装包并同意管理员授权 → 点击“一键安装” → 可选填 BVE 5/6 游戏目录 → 等待驱动安装、程序及插件复制和四个输出模式自检 → 如提示则重启电脑 → 从桌面打开 JR Controller → USB 连接硬件 → 选择游戏模式 → 启动游戏。RUNNING TRAIN 关闭 Steam Input。校准或故障处理可在程序中点击“使用说明”，无需联网。
 
 安装器用离线官方驱动载荷安装或修复，服务存在时也会实际检查虚拟设备创建。重启返回码会进入“待重启”状态，不宣称自检通过；不自动重启电脑。安装错误记录在 `C:\ProgramData\JRController\setup.log`，可点“查看安装日志”。“安装通过”不等于游戏识别通过，需进入游戏确认 HUD。
 
-74 项测试覆盖缺少驱动、已有驱动修复、需要重启、进程自检报告与设备释放等分支。外层安装包尚未代码签名；无驱动全新电脑的实际安装和重启仍需另机验收，本机自检不能替代这个验收。
+79 项测试覆盖缺少驱动、已有驱动修复、需要重启、进程自检报告与设备释放等分支。外层安装包尚未代码签名；无驱动全新电脑的实际安装和重启仍需另机验收，本机自检不能替代这个验收。
 
-已对打包 EXE 的 `--self-check` 入口实测，返回码 0，Xbox 与 Pro 两项通过；不需要连接硬件或调用本机 Python。内置驱动官方签名有效。官方 1.22.0 EXE 是 Advanced Installer 引导程序，静默安装采用 `/exenoui /qn /norestart`，修复采用 MSI `/fomus //`；参数依据 [引导程序文档](https://docs.advancedinstaller.com/exe-setup-file.html)。
+已对打包 EXE 的 `--self-check` 入口实测，返回码 0，Xbox、Pro、BVE、TRAIN CREW 四项通过；不需要连接硬件或调用本机 Python。内置驱动官方签名有效。官方 1.22.0 EXE 是 Advanced Installer 引导程序，静默安装采用 `/exenoui /qn /norestart`，修复采用 MSI `/fomus //`；参数依据 [引导程序文档](https://docs.advancedinstaller.com/exe-setup-file.html)。
 
 ## 以前版本与开发验证记录
 

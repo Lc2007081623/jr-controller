@@ -9,7 +9,7 @@ from tkinter import ttk
 
 from serial_protocol import AutoDriveGate
 from serial_notch_bridge import Reader, App as CalibrationApp
-from output_profiles import MODES,ZUIKI,load_mode,save_mode,create_backend
+from output_profiles import MODES,ZUIKI,BVE,TRAIN_CREW,load_mode,save_mode,create_backend
 from ui_theme import apply_theme,button_strip,update_buttons,BG,CARD,INK,MUTED,BLUE,GREEN,RED,AMBER
 
 TITLE='JR 控制器'
@@ -29,7 +29,7 @@ class App:
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
         header=tk.Frame(root,bg=INK,padx=28,pady=20);header.pack(fill='x')
         tk.Label(header,text='JR / CONTROLLER',bg=INK,fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
-        tk.Label(header,text='CONTROL DESK  /  0.4.1',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
+        tk.Label(header,text='CONTROL DESK  /  0.6.0',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
         tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
         body=ttk.Frame(root,padding=(26,20));body.pack(fill='both',expand=True)
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,14))
@@ -70,11 +70,18 @@ class App:
 
     def open_guide(self):
         import os
-        path=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]/'installer'))/'first_steps.html'
+        filename='train_crew_guide.html' if self.output_mode==TRAIN_CREW else 'bve_guide.html' if self.output_mode==BVE else 'first_steps.html'
+        path=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]/'installer'))/filename
         try:os.startfile(path)
-        except OSError:self.status.set('使用说明无法打开，请查看安装目录中的 first_steps.html')
+        except OSError:self.status.set('使用说明无法打开，请查看安装目录中的 '+filename)
 
     def update_mode_hint(self):
+        if self.output_mode==TRAIN_CREW:
+            self.mode_hint.set('TRAIN CREW · 先选本模式，再启动游戏并启用“外部设备输入输出”；A气笛 / B电笛 / X警报确认 / Y联络蜂鸣。B7/B8均为常用最大制动。')
+            return
+        if self.output_mode==BVE:
+            self.mode_hint.set('BVE 5/6 · 游戏中启用 JR Controller 输入插件；主手柄、换向器及四按键直接输入。')
+            return
         self.mode_hint.set('ZUIKI PRO · 主手柄 / 换向器 / 四按键。先打开本程序，再启动游戏；关闭 Steam Input。'
                            if self.output_mode==ZUIKI else 'Xbox · 主手柄 / 换向器 / 四按键。连接后立即跟随当前档位。')
 
@@ -108,6 +115,7 @@ class App:
         if self.pad:
             try:
                 self.pad.set_buttons(0);self.pad.set('N');self.pad.set_reverser('N')
+                if self.output_mode in (BVE,TRAIN_CREW):self.pad.refresh(False)
             except Exception:
                 self.drop_pad()
 
@@ -158,7 +166,7 @@ class App:
             try:
                 pad=create_backend(self.output_mode);pad.connect();self.pad=pad
             except Exception:
-                self.status.set('手柄驱动未就绪，请完成安装或重启电脑')
+                self.status.set('TRAIN CREW 接口未就绪，请退出游戏，待本程序就绪后再启动游戏' if self.output_mode==TRAIN_CREW else '游戏接口初始化失败，正在重试' if self.output_mode==BVE else '手柄驱动未就绪，请完成安装或重启电脑')
         if not self.calibration and not self.reader and now>=self.retry_at:
             self.retry_at=now+1
             try:
@@ -194,6 +202,7 @@ class App:
                         if sample.reverser in ('F','N','R') and self.pad.reverser!=sample.reverser:
                             self.pad.set_reverser(sample.reverser)
                         self.pad.set_buttons(sample.buttons)
+                    if self.output_mode in (BVE,TRAIN_CREW):self.pad.refresh(self.gate.armed)
                 except Exception:
                     self.release();self.drop_pad();self.status.set('手柄连接异常，正在重试')
             if sample:

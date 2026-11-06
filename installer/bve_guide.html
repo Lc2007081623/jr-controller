@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><title>JR 控制器 · BVE 5/6</title>
+<style>body{font:17px/1.8 'Microsoft YaHei',sans-serif;max-width:850px;margin:50px auto;padding:0 24px;color:#18263b}h1{color:#2862ce}table{border-collapse:collapse;width:100%}td,th{border:1px solid #dae0ea;padding:8px 14px;text-align:left}code{background:#eef2f9;padding:3px 6px}</style>
+<h1>JR 控制器 · BVE 5/6 0.5.0</h1>
+<p>先打开 JR 控制器，游戏模式选择 <b>BVE 5/6（专用插件）</b>。显示已连接后启动 BVE。</p>
+<ol><li>插件文件 <code>JRController.Bve.dll</code> 放入 BVE 的 <code>Input Devices</code> 文件夹。BVE 5 使用 BVE5 文件夹内的 32 位插件；BVE 6 使用 BVE6 文件夹内的 64 位插件，不能混用。</li>
+<li>游戏内右键 → Preferences → Input device，在 Additional input device 中勾选 <b>JR Controller</b>，点 OK。每个版本首次使用时设置一次。</li>
+<li>主手柄和换向器实时跟随实体位置。首次启动和重连前先把主手柄、换向器放在 N；确认车门关闭、信号允许通行后再加动力。</li></ol>
+<table><tr><th>实体输入</th><th>游戏功能</th></tr><tr><td>P1–P5 / N / B1–B8 / EB</td><td>绝对档位，按车型最大档位缩放；EB 始终对应紧急制动</td></tr><tr><td>F / N / R</td><td>前进 / 空挡 / 后退</td></tr><tr><td>A</td><td>鸣笛（电笛）</td></tr><tr><td>B</td><td>ATS 确认（相当于 Space）</td></tr><tr><td>X</td><td>EB 警报确认（相当于 Delete）</td></tr><tr><td>Y</td><td>ATS 复位（相当于 Home）</td></tr></table>
+<p>京成 3500 的刹车显示为角度，内房线 E217 显示 B1–B8。车辆档位数不足时，部分实体档位会对应同一游戏档位。</p>
+<p>拔线、传感器异常、校准、退出程序或切换模式会释放按钮、撤销动力并紧急制动。重连后立即恢复跟随当前实体位置。BVE 必须正在运行并启用插件，才能执行这一保护。</p>
+<p>请只运行一个 JR 控制器程序。校准仍在“校准与设置”中完成，不需要重刷固件。切换到其他游戏前退出 BVE，避免同时控制多个游戏。</p>
+<p>已验证：BVE 6 内房线的 N/P1/P3/B5/EB，以及 BVE 5 京成线的上述档位与 F/N/R。四按钮在自动测试中通过，线路内的鸣笛、ATS 和 EB 效果尚未逐项人工确认。</p>
+</html>

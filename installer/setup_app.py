@@ -11,11 +11,11 @@ import sys
 import tempfile
 import threading
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import winreg
 
 APP_NAME='JR Controller'
-VERSION='0.4.1'
+VERSION='0.6.0'
 UNINSTALL_KEY=r'Software\Microsoft\Windows\CurrentVersion\Uninstall\JRController'
 RUN_KEY=r'Software\Microsoft\Windows\CurrentVersion\Run'
 
@@ -79,7 +79,19 @@ def is_running():
         kernel.CloseHandle.argtypes=[ctypes.c_void_p];kernel.CloseHandle(handle)
     return bool(handle)
 
-def install(payload,startup,progress):
+def install_bve_plugins(target, paths):
+    for version, directory in paths:
+        if version not in ('BVE5','BVE6'):raise ValueError('无效的 BVE 版本')
+        if not directory:continue
+        game=Path(directory)
+        if not (game/'BveTs.exe').is_file() or not (game/'Mackoy.IInputDevice.dll').is_file():
+            raise RuntimeError(f'{version} 请选择包含 BveTs.exe 的游戏目录：{game}')
+        destination=game/'Input Devices';destination.mkdir(exist_ok=True)
+        try:shutil.copy2(target/'BVE Plugins'/version/'JRController.Bve.dll',destination/'JRController.Bve.dll')
+        except OSError as exc:raise RuntimeError(f'无法更新 {version} 插件，请退出 BVE 并检查目录权限后重试：{game}') from exc
+        logging.info('Installed %s input plugin: %s',version,destination)
+
+def install(payload,startup,progress,bve_paths=()):
     check_system()
     if is_running():raise RuntimeError('请先退出正在运行的 JR 控制器，再点击安装')
     reboot=False;existing=driver_installed()
@@ -90,6 +102,9 @@ def install(payload,startup,progress):
     shutil.copytree(payload/'app',target,dirs_exist_ok=True)
     shutil.copy2(payload/'ThirdPartyNotices.txt',target/'ThirdPartyNotices.txt')
     shutil.copy2(target/'_internal/first_steps.html',target/'first_steps.html')
+    shutil.copy2(target/'_internal/bve_guide.html',target/'bve_guide.html')
+    shutil.copy2(target/'_internal/train_crew_guide.html',target/'train_crew_guide.html')
+    install_bve_plugins(target,bve_paths)
     shutil.copy2(sys.executable,target/'Uninstall.exe')
     for path in shortcut_paths():shortcut(path,target/'JRController.exe')
     with winreg.CreateKeyEx(winreg.HKEY_LOCAL_MACHINE,RUN_KEY,0,winreg.KEY_SET_VALUE|winreg.KEY_WOW64_64KEY) as key:
@@ -102,7 +117,7 @@ def install(payload,startup,progress):
                            'InstallLocation':str(target),'DisplayIcon':str(target/'JRController.exe'),
                            'UninstallString':f'"{target / "Uninstall.exe"}" --uninstall'}.items():
             winreg.SetValueEx(key,name,0,winreg.REG_SZ,value)
-    progress(3,'检查 Xbox 和 RUNNING TRAIN 虚拟手柄')
+    progress(3,'检查 Xbox、RUNNING TRAIN、BVE 和 TRAIN CREW 输出')
     if not reboot and not verify_app(target):
         if existing:
             progress(3,'修复已有手柄驱动后重新检查')
@@ -147,7 +162,7 @@ def main():
     logging.basicConfig(filename=log_path,level=logging.INFO,encoding='utf-8',
                         format='%(asctime)s %(levelname)s %(message)s',force=True)
     logging.info('Setup %s started; uninstall=%s',VERSION,'--uninstall' in sys.argv)
-    root=tk.Tk();root.title('JR 控制器安装');root.geometry('620x510');root.resizable(False,False)
+    root=tk.Tk();root.title('JR 控制器安装');root.geometry('660x690');root.resizable(False,False)
     root.configure(bg='#F3F6FC')
     removing='--uninstall' in sys.argv
     status=tk.StringVar(value='无需 Python，无需联网。请先退出游戏和旧版 JR 控制器。' if not removing else '卸载控制程序，保留共用手柄驱动')
@@ -155,18 +170,33 @@ def main():
     body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
     ttk.Label(body,text='JR 控制器'+('卸载' if removing else '完整安装'),font=('Microsoft YaHei',21,'bold')).pack(anchor='w')
     ttk.Label(body,text='Windows 10 / 11 · 64 位 · '+VERSION).pack(anchor='w',pady=(3,16))
-    steps=[tk.StringVar(value=text) for text in ('1  检查电脑与手柄驱动','2  安装程序与离线说明','3  验证两个游戏模式','4  完成安装，连接硬件')]
+    steps=[tk.StringVar(value=text) for text in ('1  检查电脑与手柄驱动','2  安装程序、插件与离线说明','3  验证三个游戏模式','4  完成安装，连接硬件')]
     if not removing:
         for text in steps:ttk.Label(body,textvariable=text,font=('Microsoft YaHei',11)).pack(anchor='w',pady=5)
     bar=ttk.Progressbar(body,maximum=4);bar.pack(fill='x',pady=12)
     ttk.Label(body,textvariable=status,wraplength=565,justify='left').pack(anchor='w',pady=8)
     if not removing:ttk.Checkbutton(root,text='登录后自动运行，插入即连接',variable=startup).pack(pady=5)
+    bve_vars=[]
+    if not removing:
+        box=ttk.LabelFrame(root,text='BVE 插件（可选；留空则仅随程序附带）',padding=10)
+        box.pack(fill='x',padx=24,pady=5)
+        for version,default in (('BVE5','D:/bve'),('BVE6','D:/BVE6')):
+            value=tk.StringVar(value=default if (Path(default)/'BveTs.exe').is_file() else '')
+            bve_vars.append((version,value))
+            row_bve=ttk.Frame(box);row_bve.pack(fill='x',pady=3)
+            ttk.Label(row_bve,text=version,width=6).pack(side='left')
+            ttk.Entry(row_bve,textvariable=value).pack(side='left',fill='x',expand=True,padx=6)
+            def browse(v=value):
+                folder=filedialog.askdirectory(title='选择包含 BveTs.exe 的游戏目录')
+                if folder:v.set(folder)
+            ttk.Button(row_bve,text='选择目录',command=browse).pack(side='right')
     def begin():
         button.config(state='disabled');choice=startup.get()
+        paths=[(version,value.get().strip()) for version,value in bve_vars]
         root.protocol('WM_DELETE_WINDOW',lambda:status.set('正在处理，请稍候…'))
         def worker():
             try:
-                restart=uninstall() if removing else install(Path(sys._MEIPASS),choice,lambda step,text:events.put(('progress',(step,text))))
+                restart=uninstall() if removing else install(Path(sys._MEIPASS),choice,lambda step,text:events.put(('progress',(step,text))),paths)
                 events.put(('done',restart))
             except Exception as exc:
                 logging.exception('Setup failed');events.put(('error',str(exc)))

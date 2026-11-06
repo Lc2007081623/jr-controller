@@ -5,10 +5,14 @@ from pathlib import Path
 
 from xinput_notch_test import Backend
 from zuiki_pro import ZuikiProVirtual
+from bve_output import BveBackend
+from train_crew_output import TrainCrewBackend
 
 XBOX='JR EAST（Xbox）'
 ZUIKI='RUNNING TRAIN（ZUIKI）'
-MODES=(XBOX,ZUIKI)
+BVE='BVE 5/6（专用插件）'
+TRAIN_CREW='TRAIN CREW（官方接口）'
+MODES=(XBOX,ZUIKI,BVE,TRAIN_CREW)
 
 def settings_path():
     return Path(os.environ.get('LOCALAPPDATA',Path.home()))/'JRController'/'settings.json'
@@ -57,6 +61,8 @@ class ZuikiBackend:
             finally:pad.close()
 
 def create_backend(mode):
+    if mode==TRAIN_CREW:return TrainCrewBackend()
+    if mode==BVE:return BveBackend()
     if mode==ZUIKI:return ZuikiBackend()
     if mode==XBOX:return Backend()
     raise ValueError('Unknown game mode')

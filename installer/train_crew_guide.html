@@ -1,0 +1,16 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>TRAIN CREW 控制器使用说明</title>
+<style>body{font:18px/1.8 "Microsoft YaHei",sans-serif;max-width:850px;margin:45px auto;padding:0 22px;color:#20324b}h1{color:#174e86}table{border-collapse:collapse;width:100%}td,th{border:1px solid #cbd4e1;padding:9px;text-align:left}</style>
+<h1>JR Controller · TRAIN CREW</h1>
+<p>在 JR Controller 的游戏模式选择 <b>TRAIN CREW（官方接口）</b>，再启动游戏。在游戏设置 → 操作设置中启用<b>外部设备输入输出</b>。菜单选项继续用鼠标或键盘操作。</p>
+<p>如果程序提示接口未就绪，请先退出 TRAIN CREW，等控制器程序就绪后再启动游戏。本机遇到过游戏先启动时SDK无法打开共享内存的情况。</p>
+<p>主手柄、换向器和按钮沿用控制器中保存的校准，连接后立即跟随当前位置。进入游戏前请先置空挡，松开按钮。</p>
+<table><tr><th>实体操作</th><th>TRAIN CREW</th></tr>
+<tr><td>P1～P5 / N</td><td>对应牵引档 / 空挡</td></tr>
+<tr><td>B1～B6</td><td>对应常用制动档</td></tr>
+<tr><td>B7、B8</td><td>B6（游戏常用最大制动）</td></tr>
+<tr><td>EB</td><td>紧急制动</td></tr><tr><td>F / N / R</td><td>前进 / 空挡 / 后退；游戏的车辆联锁仍生效</td></tr>
+<tr><td>A / B</td><td>气笛 / 电笛</td></tr><tr><td>X / Y</td><td>EB装置警报确认 / 联络蜂鸣</td></tr></table>
+<p>游戏当前标准车辆为六段常用制动，本模式将 B7/B8 保持在常用最大，不会把它们当作紧急制动。双手柄与电磁直通制动车辆尚需分别验证。</p>
+<p>退出、校准或串口数据失效时发送紧急制动，并释放方向与按钮；桥接程序超过1秒收不到桌面程序的数据时也发送相同状态。</p>
+<p>本模式使用 <a href="https://acty-soft.com/traincrew/controller/">TRAIN CREW 官方控制器开发接口</a>，不修改游戏程序，不需要 Steam Input 或额外虚拟手柄。</p>
+</html>

@@ -4,6 +4,8 @@ from pathlib import Path
 
 parts=['JR Controller third-party notices\n\nViGEmBus 1.22.0: https://github.com/nefarius/ViGEmBus\n']
 parts.append(Path('.local-tools/installer/ViGEmBus-LICENSE.txt').read_text(encoding='utf-8'))
+parts.append('\n\nTRAIN CREW official controller SDK (2025-11-16)\nhttps://acty-soft.com/traincrew/controller/\n')
+parts.append(Path('train_crew/sdk/ReadMe.txt').read_text(encoding='utf-8-sig'))
 for name in ('vgamepad','pyserial','pyinstaller'):
     package=distribution(name)
     parts.append('\n\n'+name+' '+package.version+'\n')

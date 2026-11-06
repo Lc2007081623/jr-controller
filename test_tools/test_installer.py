@@ -9,6 +9,20 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'installer'))
 import setup_app
 
 class InstallerTests(unittest.TestCase):
+    def test_bve_plugins_copy_selected_architecture_and_allow_blank(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target=Path(temp)/'app';game=Path(temp)/'game';game.mkdir()
+            (game/'BveTs.exe').touch();(game/'Mackoy.IInputDevice.dll').touch()
+            source=target/'BVE Plugins/BVE5/JRController.Bve.dll'
+            source.parent.mkdir(parents=True);source.write_bytes(b'x86-plugin')
+            setup_app.install_bve_plugins(target,[('BVE5',str(game)),('BVE6','')])
+            self.assertEqual((game/'Input Devices/JRController.Bve.dll').read_bytes(),b'x86-plugin')
+            with self.assertRaisesRegex(RuntimeError,'游戏目录'):
+                setup_app.install_bve_plugins(target,[('BVE6',str(target))])
+            with patch.object(setup_app.shutil,'copy2',side_effect=PermissionError()):
+                with self.assertRaisesRegex(RuntimeError,'退出 BVE'):
+                    setup_app.install_bve_plugins(target,[('BVE5',str(game))])
+
     def installation_case(self,existing,reboot=False,checks=(True,)):
         progress=Mock()
         with tempfile.TemporaryDirectory() as temp,ExitStack() as stack:

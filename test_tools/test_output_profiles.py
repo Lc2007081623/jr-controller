@@ -6,6 +6,11 @@ import output_profiles as profiles
 from controller_app import App
 
 class ProfileTests(unittest.TestCase):
+    def test_bve_does_not_create_virtual_gamepads(self):
+        with patch.object(profiles,'Backend') as xbox,patch.object(profiles,'ZuikiBackend') as zuiki,patch.object(profiles,'BveBackend') as bve:
+            self.assertIs(profiles.create_backend(profiles.BVE),bve.return_value)
+            xbox.assert_not_called();zuiki.assert_not_called()
+
     def test_setting_roundtrip_and_invalid_fallback(self):
         with tempfile.TemporaryDirectory() as folder,patch.object(profiles,'settings_path',return_value=Path(folder)/'settings.json'):
             self.assertEqual(profiles.load_mode(),profiles.XBOX)
