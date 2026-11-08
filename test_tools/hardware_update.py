@@ -18,15 +18,17 @@ FIRMWARE_VERSION = '1.1.0'
 APP_OFFSET = 0x10000
 APP_SIZE = 0x140000
 MODELS = {
-    MODEL: 'JR 控制器 · C3 点阵版',
+    MODEL: 'Hikari 1',
     'JR-S3-AS5600': 'JR 控制器 · S3 磁编码器版',
     'JR-S3-ADC': 'JR 控制器 · S3 电位器版',
 }
 
-def hardware_label(sample):
-    label = MODELS.get(sample.model, sample.model or f'旧版控制器 · {sample.board}')
+def hardware_name(sample):
+    return MODELS.get(sample.model, sample.model or f'旧版控制器 · {sample.board}')
+
+def hardware_details(sample):
     serial = f'  ·  设备 {sample.device_id[-6:].upper()}' if sample.device_id else ''
-    return f"{label}  ·  {sample.sensor}  ·  固件 {sample.firmware or '未报告版本'}{serial}"
+    return f"固件 {sample.firmware or '未报告版本'}{serial}"
 
 def bundle_path():
     base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parents[1] / 'build'))
@@ -111,10 +113,11 @@ class HardwareUpdater:
         self.status = tk.StringVar(value='连接控制器后可检查固件版本。')
 
     def add_controls(self, parent):
-        ttk.Label(parent, textvariable=self.app.hardware_text, wraplength=540).pack(anchor='w', pady=(0, 8))
+        ttk.Label(parent, textvariable=self.app.hardware_name, style='Section.TLabel').pack(anchor='w')
+        ttk.Label(parent, textvariable=self.app.hardware_text, wraplength=540).pack(anchor='w', pady=(4, 8))
         ttk.Label(parent, textvariable=self.status, wraplength=540, justify='left').pack(anchor='w', pady=(0, 10))
         ttk.Button(parent, text=f'更新 C3 固件至 {FIRMWARE_VERSION}', command=lambda: self.start(parent)).pack(anchor='w')
-        ttk.Label(parent, text='支持配套 ESP32-C3 + AS5600 点阵版。请先退出游戏，连接一台控制器。'
+        ttk.Label(parent, text='支持 Hikari 1（ESP32-C3 + AS5600 点阵版）。请先退出游戏，连接一台控制器。'
                               '更新期间保持 USB 连接。写入应用区，保留板上校准。',
                   wraplength=540).pack(anchor='w', pady=12)
 

@@ -14,7 +14,7 @@ from ui_theme import apply_theme,button_strip,update_buttons
 from settings_ui import THEMES, DEFAULT_PORT, SettingsWindow, led_settings, led_command
 from local_state_api import LocalStateAPI, OFFLINE
 from update_check import VERSION
-from hardware_update import HardwareUpdater, hardware_label
+from hardware_update import HardwareUpdater, hardware_name, hardware_details
 from game_guides import GUIDES
 
 TITLE='JR 控制器'
@@ -39,14 +39,15 @@ class App:
         self.led_settings = led_settings(prefs.get('led'))
         self.led_sent = None
         self.led_status = tk.StringVar(value='等待控制器连接')
-        self.hardware_text = tk.StringVar(value='未识别硬件')
+        self.hardware_name = tk.StringVar(value='未识别硬件')
+        self.hardware_text = tk.StringVar()
         self.updater = HardwareUpdater(self)
         self.status=tk.StringVar(value='正在连接控制器…')
         self.live=tk.StringVar(value='插入 USB 后自动连接')
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
         self.mode=tk.StringVar(value=self.output_mode)
         self.mode_hint=tk.StringVar()
-        root.title(TITLE);root.geometry('820x750');root.minsize(765,690)
+        root.title(TITLE);root.geometry('820x780');root.minsize(765,780)
         self.dashboard = ttk.Frame(root)
         self.dashboard.pack(fill='both',expand=True)
         self.set_theme(self.theme)
@@ -67,39 +68,49 @@ class App:
     def build_dashboard(self):
         root = self.dashboard
         BG,CARD,INK,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
-        header=tk.Frame(root,bg='#13283A',padx=28,pady=20);header.pack(fill='x')
+        header=tk.Frame(root,bg='#13283A',padx=28,pady=12);header.pack(fill='x')
         tk.Label(header,text='JR / CONTROLLER',bg='#13283A',fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
         tk.Label(header,text=f'CONTROL DESK  /  {VERSION}',bg='#13283A',fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
         tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
-        body=ttk.Frame(root,padding=(26,20));body.pack(fill='both',expand=True)
-        games=ttk.Frame(body);games.pack(fill='x',pady=(0,14))
+        body=ttk.Frame(root,padding=(26,14));body.pack(fill='both',expand=True)
+        games=ttk.Frame(body);games.pack(fill='x',pady=(0,10))
         ttk.Label(games,text='游戏模式').pack(side='left',padx=(0,12))
         self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=32)
         self.mode_box.pack(side='left',fill='x',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
         ttk.Button(games,text='接入说明',command=self.open_mode_guide).pack(side='left',padx=(10,0))
         self.update_mode_hint()
-        ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,14))
-        status_card=tk.Frame(body,bg=CARD,padx=18,pady=15);status_card.pack(fill='x',pady=(0,14))
-        self.badge=tk.Label(status_card,text='● 等待连接',bg=TILE,fg=MUTED,font=('Microsoft YaHei UI',10,'bold'),padx=10,pady=5)
-        self.badge.pack(side='right',anchor='n')
-        tk.Label(status_card,textvariable=self.status,bg=CARD,fg=INK,font=('Microsoft YaHei UI',12,'bold'),wraplength=470,anchor='w',justify='left').pack(anchor='w',pady=(0,7))
-        tk.Label(status_card,textvariable=self.live,bg=CARD,fg=MUTED,font=('Segoe UI',10),anchor='w').pack(anchor='w')
-        tk.Label(status_card,textvariable=self.hardware_text,bg=CARD,fg=MUTED,
-                 wraplength=730,justify='left').pack(anchor='w',pady=(5,0))
-        metrics=tk.Frame(body,bg=BG);metrics.pack(fill='x',pady=(0,14))
+        ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,10))
+        status_card = tk.Frame(body, bg=CARD, padx=20, pady=12)
+        status_card.pack(fill='x', pady=(0, 14))
+        heading = tk.Frame(status_card, bg=CARD)
+        heading.pack(fill='x')
+        tk.Label(heading, textvariable=self.hardware_name, bg=CARD, fg=INK,
+                 font=('Microsoft YaHei UI', 24, 'bold')).pack(side='left', anchor='w')
+        self.badge = tk.Label(heading, text='● 等待连接', bg=TILE, fg=MUTED,
+                              font=('Microsoft YaHei UI', 12, 'bold'), padx=12, pady=5)
+        self.badge.pack(side='right', anchor='center')
+        tk.Label(status_card, textvariable=self.status, bg=CARD, fg=INK,
+                 font=('Microsoft YaHei UI', 16, 'bold'), wraplength=650,
+                 anchor='w', justify='left').pack(anchor='w', pady=(2, 7))
+        details = tk.Frame(status_card, bg=TILE, padx=12, pady=7)
+        details.pack(fill='x')
+        for variable in (self.live, self.hardware_text):
+            tk.Label(details, textvariable=variable, bg=TILE, fg=INK,
+                     font=('Microsoft YaHei UI', 13), anchor='w').pack(anchor='w')
+        metrics=tk.Frame(body,bg=BG);metrics.pack(fill='x',pady=(0,10))
         metrics.columnconfigure((0,1),weight=1,uniform='metric')
-        main=tk.Frame(metrics,bg=CARD,padx=22,pady=16);main.grid(row=0,column=0,sticky='nsew',padx=(0,7))
+        main=tk.Frame(metrics,bg=CARD,padx=22,pady=12);main.grid(row=0,column=0,sticky='nsew',padx=(0,7))
         tk.Label(main,text='01  /  主手柄',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
         self.notch_label=tk.Label(main,textvariable=self.notch_text,bg=CARD,fg=BLUE,font=('Segoe UI',57,'bold'));self.notch_label.pack(anchor='w')
         tk.Label(main,text='牵引  /  空挡  /  制动',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',9)).pack(anchor='w')
-        direction=tk.Frame(metrics,bg=CARD,padx=22,pady=16);direction.grid(row=0,column=1,sticky='nsew',padx=(7,0))
+        direction=tk.Frame(metrics,bg=CARD,padx=22,pady=12);direction.grid(row=0,column=1,sticky='nsew',padx=(7,0))
         tk.Label(direction,text='02  /  换向器',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
         tk.Label(direction,textvariable=self.reverser_text,bg=CARD,fg=INK,font=('Microsoft YaHei UI',23,'bold'),pady=14).pack(anchor='w')
         selector=tk.Frame(direction,bg=CARD);selector.pack(anchor='w',pady=(0,6));self.direction_labels={}
         for value in ('F','N','R'):
             label=tk.Label(selector,text=value,bg=TILE,fg=MUTED,font=('Segoe UI',11,'bold'),width=4,pady=5)
             label.pack(side='left',padx=(0,6));self.direction_labels[value]=label
-        buttons=tk.Frame(body,bg=CARD,padx=14,pady=12);buttons.pack(fill='x',pady=(0,18))
+        buttons=tk.Frame(body,bg=CARD,padx=14,pady=12);buttons.pack(fill='x',pady=(0,12))
         tk.Label(buttons,text='03  /  实体按键',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w',padx=6,pady=(0,8))
         strip,self.key_labels=button_strip(buttons);strip.pack(anchor='w')
         row=ttk.Frame(body);row.pack(fill='x')
@@ -107,7 +118,7 @@ class App:
         ttk.Button(row,text='软件设置',command=self.open_settings).pack(side='left',padx=10)
         ttk.Button(row,text='使用说明',command=self.open_guide).pack(side='left')
         ttk.Button(row,text='退出',command=self.close).pack(side='right')
-        ttk.Label(body,text='校准保存在控制器中  ·  USB 自动连接  ·  实时跟随当前位置',style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(16,0))
+        ttk.Label(body,text='校准保存在控制器中  ·  USB 自动连接  ·  实时跟随当前位置',style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(10,0))
 
     def open_settings(self):
         if self.settings_window and self.settings_window.window.winfo_exists():
@@ -221,7 +232,8 @@ class App:
         self.gate=AutoDriveGate();self.retry_at=time.monotonic()+1
         self.led_sent = None
         self.led_status.set('等待控制器连接')
-        self.hardware_text.set('未识别硬件')
+        self.hardware_name.set('未识别硬件')
+        self.hardware_text.set('')
         if self.state_api:
             self.state_api.snapshot = OFFLINE
         self.live.set('插入 USB 后自动连接')
@@ -321,7 +333,8 @@ class App:
         fresh = bool(sample and not self.calibration and self.reader and 0 <= now-self.last_sample_at <= .15)
         self.updater.observe(sample if fresh else None, now)
         if fresh:
-            self.hardware_text.set(hardware_label(sample))
+            self.hardware_name.set(hardware_name(sample))
+            self.hardware_text.set(hardware_details(sample))
             if not sample.led_config:
                 self.led_status.set('此固件不支持点阵设置，请先更新固件')
             elif self.led_sent != sample.boot:
@@ -375,7 +388,11 @@ def main():
         return
     if not mutex:raise ctypes.WinError(error)
     try:
-        root=tk.Tk();App(root)
+        root=tk.Tk()
+        icon = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parents[1] / 'installer')) / 'hikari.ico'
+        if sys.platform == 'win32' and icon.is_file():
+            root.iconbitmap(default=str(icon))
+        App(root)
         if '--background' in sys.argv:root.iconify()
         root.mainloop()
     finally:

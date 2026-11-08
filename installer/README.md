@@ -1,6 +1,6 @@
 # Windows 简化安装包
 
-## 当前完整安装包 1.1.0
+## 当前完整安装包 1.1.1
 
 本版加入主题、更新查询、各游戏接入说明、本机 HTTP 接口与配套 C3 点阵固件更新。构建需安装 PlatformIO，并提供 Espressif esptool 5.3.0 的 Windows 工具目录，可通过 `JR_ESPTOOL_DIR` 指定。实物刷写与点阵显示尚待验证。
 

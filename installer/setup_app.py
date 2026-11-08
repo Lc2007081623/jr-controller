@@ -15,7 +15,7 @@ from tkinter import ttk, filedialog
 import winreg
 
 APP_NAME='JR Controller'
-VERSION='1.1.0'
+VERSION='1.1.1'
 UNINSTALL_KEY=r'Software\Microsoft\Windows\CurrentVersion\Uninstall\JRController'
 RUN_KEY=r'Software\Microsoft\Windows\CurrentVersion\Run'
 
@@ -66,10 +66,10 @@ def shortcut_paths():
 def shortcut(path,target):
     # Pass paths as arguments, never interpolate them into executable script text.
     script='Set s=CreateObject("WScript.Shell").CreateShortcut(WScript.Arguments(0))\n'
-    script+='s.TargetPath=WScript.Arguments(1)\ns.WorkingDirectory=WScript.Arguments(2)\ns.Save\n'
+    script+='s.TargetPath=WScript.Arguments(1)\ns.WorkingDirectory=WScript.Arguments(2)\ns.IconLocation=WScript.Arguments(3)\ns.Save\n'
     with tempfile.TemporaryDirectory(prefix='JRShortcut-') as temp:
         file=Path(temp)/'shortcut.vbs';file.write_text(script,encoding='ascii')
-        subprocess.run([str(Path(os.environ['WINDIR'])/'System32/cscript.exe'),'//nologo',str(file),str(path),str(target),str(target.parent)],check=True,creationflags=subprocess.CREATE_NO_WINDOW)
+        subprocess.run([str(Path(os.environ['WINDIR'])/'System32/cscript.exe'),'//nologo',str(file),str(path),str(target),str(target.parent),str(target.parent / "_internal" / "hikari.ico")+",0"],check=True,creationflags=subprocess.CREATE_NO_WINDOW)
 
 def is_running():
     kernel=ctypes.WinDLL('kernel32',use_last_error=True)
@@ -163,6 +163,9 @@ def main():
                         format='%(asctime)s %(levelname)s %(message)s',force=True)
     logging.info('Setup %s started; uninstall=%s',VERSION,'--uninstall' in sys.argv)
     root=tk.Tk();root.title('JR 控制器安装');root.geometry('660x690');root.resizable(False,False)
+    icon = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent)) / 'hikari.ico'
+    if sys.platform == 'win32' and icon.is_file():
+        root.iconbitmap(default=str(icon))
     root.configure(bg='#F3F6FC')
     removing='--uninstall' in sys.argv
     status=tk.StringVar(value='无需 Python，无需联网。请先退出游戏和旧版 JR 控制器。' if not removing else '卸载控制程序，保留共用手柄驱动')

@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
+ICON=ROOT/'installer/hikari.ico'
 DRIVER=ROOT/'.local-tools/installer/ViGEmBus_1.22.0_x64_x86_arm64.exe'
 # Official v1.22.0 asset, Authenticode verified as Nefarius Software Solutions e.U.
 DRIVER_SHA256='89220a7865076b342892f98865f3499fb7c4cfd673159e89d352c360fd014c6a'
@@ -43,6 +44,7 @@ def main():
     build_firmware_update()
     run('-m','unittest','discover','-s','test_tools','-p','test_*.py')
     run('-m','PyInstaller','--noconfirm','--onedir','--windowed','--name','JRController',
+        '--icon',str(ICON),'--add-data',str(ICON)+';.',
         '--collect-all','vgamepad','--distpath','release/app','--workpath','build/pyinstaller',
         '--specpath','build','--add-data',str(ROOT/'installer/first_steps.html')+';.',
         '--add-data',str(ROOT/'installer/bve_guide.html')+';.',
@@ -61,6 +63,7 @@ def main():
         shutil.rmtree(old)
     run('installer/third_party_notices.py')
     run('-m','PyInstaller','--noconfirm','--onefile','--windowed','--uac-admin',
+        '--icon',str(ICON),'--add-data',str(ICON)+';.',
         '--name','JRControllerSetup','--distpath','release','--workpath','build/setup',
         '--specpath','build','--add-data',str(bundle)+';app',
         '--add-data',str(DRIVER)+';.',
