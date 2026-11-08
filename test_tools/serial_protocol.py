@@ -1,5 +1,6 @@
 """Pure protocol/arming logic. Importing this module never creates a controller."""
 import json
+import re
 from dataclasses import dataclass
 
 NOTCH_ORDER = ('EB','B8','B7','B6','B5','B4','B3','B2','B1','N','P1','P2','P3','P4','P5')
@@ -27,6 +28,10 @@ class Sample:
     board: str = 'S3'
     reverser: str | None = None
     buttons: int = 0
+    led_config: bool = False
+    model: str | None = None
+    firmware: str | None = None
+    device_id: str | None = None
 
 def parse_sample(line):
     if len(line) > 512:
@@ -67,6 +72,11 @@ def parse_sample(line):
         raise ValueError('C3 requires reverser contacts')
     if type(data['buttons']) is not int or not 0 <= data['buttons'] <= 15:
         raise ValueError('invalid buttons')
+    data['led_config'] = data.get('led_config') is True
+    for key, pattern in [('model', r'[A-Z0-9-]{1,32}'), ('firmware', r'[0-9]+\.[0-9]+\.[0-9]+'),
+                         ('device_id', r'[0-9a-f]{12}')]:
+        value = data.get(key)
+        data[key] = value if isinstance(value, str) and re.fullmatch(pattern, value) else None
     return Sample(**{key:data[key] for key in Sample.__dataclass_fields__})
 
 class ReverserSwitchGate:

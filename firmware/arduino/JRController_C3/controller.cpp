@@ -53,8 +53,16 @@ bool calibrated = false, collecting = false, filterReady = false;
 bool positionValid = true, sensorFaultPending = false;
 uint8_t sensorStatus = 0;
 int notch = -1;
+char deviceId[13];
+#if CONFIG_IDF_TARGET_ESP32C3 && defined(JR_USE_AS5600)
+constexpr const char *MODEL = "JR-C3-AS5600-R1";
+#elif defined(JR_USE_AS5600)
+constexpr const char *MODEL = "JR-S3-AS5600";
+#else
+constexpr const char *MODEL = "JR-S3-ADC";
+#endif
 uint32_t bootId, sequence = 0, sampleAt = 0, reportAt = 0, displayAt = 0;
-char command[64]; size_t commandLen = 0;
+char command[256]; size_t commandLen = 0;
 bool discardLine = false;
 Preferences prefs;
 
@@ -84,7 +92,42 @@ void scanDisplay() {
 #endif
 }
 
+int matrixHex(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+void configureMatrix(const char *payload) {
+    // Enable, rotation, brightness, 4 hex mask digits, then 15 eight-byte frames.
+    if (strlen(payload) != 247) { ack("error_led_config"); return; }
+    MatrixSettings next;
+    uint8_t values[247];
+    for (int i = 0; i < 247; ++i) {
+        int value = matrixHex(payload[i]);
+        if (value < 0) { ack("error_led_config"); return; }
+        values[i] = value;
+    }
+    if (values[0] > 1 || values[1] > 3 || values[3] > 7) {
+        ack("error_led_config"); return;
+    }
+    next.enabled = values[0] != 0;
+    next.rotation = values[1];
+    next.brightness = values[2];
+    for (int i = 3; i < 7; ++i) next.customMask = (next.customMask << 4) | values[i];
+    for (int i = 0; i < COUNT; ++i)
+        for (int y = 0; y < 8; ++y) {
+            int offset = 7 + (i * 8 + y) * 2;
+            next.patterns[i][y] = (values[offset] << 4) | values[offset + 1];
+        }
+    matrixSettings = next;
+    writeRegister(0x0a, next.brightness);
+    writeRegister(0x0c, next.enabled ? 1 : 0);
+    ack("led_config_applied");
+}
+
 void runCommand(char *s) {
+    if (!strncmp(s, "LED ", 4)) { configureMatrix(s + 4); return; }
 #if CONFIG_IDF_TARGET_ESP32C3
     if (s[0]=='K') {
         if (!strcmp(s,"KBEGIN")) {
@@ -287,6 +330,9 @@ void setup() {
     }
 #endif
     forwardRaw = forwardPressed = digitalRead(FORWARD_PIN) == LOW;
+    uint64_t mac = ESP.getEfuseMac();
+    for (int i = 0; i < 6; ++i)
+        snprintf(deviceId + i * 2, 3, "%02x", (unsigned)((mac >> (i * 8)) & 0xff));
     matrixBegin();
     Serial.begin(115200); bootId = esp_random();
 #ifdef JR_USE_AS5600
@@ -356,11 +402,12 @@ void loop() {
         }
         Serial.printf(",\"reverser\":\"%c\",\"buttons\":%u", reverser, mappedButtons(inputsStable>>2,buttonMap));
 #endif
-        Serial.println("}");
+        Serial.printf(",\"led_config\":true,\"model\":\"%s\",\"firmware\":\"1.1.0\",\"device_id\":\"%s\"}\n", MODEL, deviceId);
         sensorFaultPending = false;
     }
     if (uint32_t(now-displayAt) >= 100) {
         displayAt = now;
-        matrixShow(!positionValid ? "--" : (collecting ? "C" : (notch >= 0 ? names[notch] : "--")));
+        matrixShow(!positionValid ? "--" : (collecting ? "C" : (notch >= 0 ? names[notch] : "--")),
+                   positionValid && !collecting ? notch : -1);
     }
 }

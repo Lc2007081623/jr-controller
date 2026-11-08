@@ -11,6 +11,7 @@ class InstallCheckTests(unittest.TestCase):
         with patch.object(install_check,'create_backend',side_effect=pads),patch.object(install_check.time,'sleep'),patch.object(install_check,'raw_hid_paths',return_value=['HID#VID_33DD&PID_0006']):
             result=install_check.check_installation()
         self.assertTrue(result['ok']);self.assertEqual(len(result['checks']),len(install_check.MODES))
+        self.assertIn('.selfcheck.', pads[install_check.MODES.index(install_check.BVE)].map_name)
         for pad in pads:
             pad.set.assert_called_once_with('N');pad.set_reverser.assert_called_once_with('N')
             pad.set_buttons.assert_called_once_with(0);pad.close.assert_called_once()

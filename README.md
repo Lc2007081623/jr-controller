@@ -2,21 +2,23 @@
 
 ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项目，保留第一版电位器方案。
 
-当前桌面安装包：**1.0.0（含 TRAIN CREW 官方接口与 BVE 5/6 插件）**，详见[版本记录](CHANGELOG.md)。
+当前桌面安装包：**1.1.0**，详见[版本记录](CHANGELOG.md)。
 
-[下载安装包（v1.0.0）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.0.0)。配套的 `.sha256` 文件可用于核对安装包完整性。
+[下载安装包（v1.1.0）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.1.0)。配套的 `.sha256` 文件可用于核对安装包完整性。
+
+在“软件设置”中可以切换主题、查询 GitHub 更新、编辑点阵并开启本机只读 HTTP 接口。游戏模式右侧提供对应的接入步骤。软件显示所连接的板型、传感器与固件版本，内置配套 C3 点阵版的固件更新包。点阵编辑需要新版固件，实物更新尚待验证。
 
 ## 安装与使用
 
 1. 从上方发行页面下载 `JRControllerSetup.exe`，退出旧版 JR Controller 和游戏后运行安装包。Windows 10/11 64 位无需另装 Python；安装器会检查并按需安装手柄驱动。
 2. 安装时可选择 BVE 5、BVE 6 的游戏目录；不使用 BVE 时可以留空。按提示完成安装，需要时重启电脑。
-3. 用数据线连接已烧录、已校准的控制器，打开 JR Controller，选择下表中的游戏模式，然后启动游戏。若未校准，可在程序中打开“校准与设置”。
+3. 用数据线连接已烧录、已校准的控制器，打开 JR Controller，选择下表中的游戏模式，然后启动游戏。若未校准，可在程序中打开“设备校准”。
 4. 连接或恢复连接后，游戏输入会跟随实体手柄、换向器和按钮的当前位置。开始驾驶前请确认手柄位置及游戏内显示。
 
 | 游戏 | 程序模式 | 游戏设置与操作 |
 | --- | --- | --- |
 | JR EAST Train Simulator（Steam） | JR EAST（Xbox） | 在 Steam 启用 Steam Input，并应用官方 Tsukasa Mascon 布局。 |
-| JR EAST Train Simulator（已验证的非 Steam 版） | JR EAST（Xbox） | 保持控制器程序运行后启动游戏；不同版本和车型需另行验证。 |
+| JR EAST Train Simulator（原生 XInput 直连） | JR EAST（Xbox） | 先运行控制器程序，再按游戏本身的要求启动。不同游戏版本和车型需分别验证。 |
 | RUNNING TRAIN | RUNNING TRAIN（ZUIKI） | 在 Steam 中禁用该游戏的 Steam Input。 |
 | BVE 5.8 / 6 | BVE 5/6（专用插件） | 在游戏 Preferences → Input device 中勾选 JR Controller；BVE 5 和 6 分别使用对应架构插件。详见 [BVE 接入说明](docs/BVE接入验证.md)。 |
 | TRAIN CREW | TRAIN CREW（官方接口） | 游戏输入设备设置启用“外部设备输入/输出”。建议先选择控制器模式，再启动游戏。详见 [TRAIN CREW 接入说明](docs/TRAIN_CREW接入.md)。 |

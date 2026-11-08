@@ -2,16 +2,20 @@
 import json
 from pathlib import Path
 import time
+from uuid import uuid4
 
 from output_profiles import MODES,create_backend
 from zuiki_virtual_test import raw_hid_paths
-from output_profiles import ZUIKI
+from output_profiles import BVE, ZUIKI
 
 def check_installation():
     results=[]
     for mode in MODES:
         pad=create_backend(mode)
         try:
+            if mode==BVE:
+                # Installation checks must not publish into a running game's channel.
+                pad.map_name = r'Local\JRController.BVE.selfcheck.' + uuid4().hex
             pad.connect();pad.set('N');pad.set_reverser('N');pad.set_buttons(0)
             if mode==ZUIKI:
                 time.sleep(.3)

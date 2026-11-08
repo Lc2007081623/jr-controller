@@ -17,18 +17,28 @@ MODES=(XBOX,ZUIKI,BVE,TRAIN_CREW)
 def settings_path():
     return Path(os.environ.get('LOCALAPPDATA',Path.home()))/'JRController'/'settings.json'
 
-def load_mode():
+def load_settings():
     try:
-        mode=json.loads(settings_path().read_text(encoding='utf-8'))['game_mode']
-        return mode if mode in MODES else XBOX
-    except (OSError,ValueError,KeyError,TypeError):return XBOX
+        values = json.loads(settings_path().read_text(encoding='utf-8'))
+        return values if isinstance(values, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+def save_settings(**changes):
+    path = settings_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix('.tmp')
+    temp.write_text(json.dumps(load_settings() | changes, ensure_ascii=False), encoding='utf-8')
+    temp.replace(path)
+
+def load_mode():
+    mode = load_settings().get('game_mode')
+    return mode if mode in MODES else XBOX
 
 def save_mode(mode):
-    if mode not in MODES:raise ValueError('Unknown game mode')
-    path=settings_path();path.parent.mkdir(parents=True,exist_ok=True)
-    temp=path.with_suffix('.tmp')
-    temp.write_text(json.dumps({'game_mode':mode},ensure_ascii=False),encoding='utf-8')
-    temp.replace(path)
+    if mode not in MODES:
+        raise ValueError('Unknown game mode')
+    save_settings(game_mode=mode)
 
 class ZuikiBackend:
     """Verified Pro handle, buttons and absolute reverser output."""

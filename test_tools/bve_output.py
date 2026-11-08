@@ -13,6 +13,7 @@ PACKET = struct.Struct('<IIIiiiiI')
 class BveBackend:
     def __init__(self):
         self.memory = None
+        self.map_name = MAP_NAME
         self.notch = 'N'
         self.reverser = 'N'
         self.buttons = 0
@@ -20,7 +21,7 @@ class BveBackend:
 
     def connect(self):
         if self.memory is None:
-            self.memory = mmap.mmap(-1, PACKET.size, tagname=MAP_NAME)
+            self.memory = mmap.mmap(-1, PACKET.size, tagname=self.map_name)
 
     def set(self, name):
         if name not in NOTCH_ORDER:

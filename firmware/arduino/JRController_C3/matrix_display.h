@@ -2,6 +2,13 @@
 #include <Arduino.h>
 #include "board_pins.h"
 constexpr uint8_t BRIGHTNESS = 2, ROTATION = 3;
+struct MatrixSettings {
+    uint8_t brightness = BRIGHTNESS, rotation = ROTATION;
+    bool enabled = true;
+    uint16_t customMask = 0;
+    uint8_t patterns[15][8] = {};
+};
+MatrixSettings matrixSettings;
 constexpr bool MIRROR_X = false;
 void writeRegister(uint8_t address, uint8_t value) {
     digitalWrite(CS_PIN, LOW);
@@ -23,7 +30,7 @@ constexpr uint8_t DIGITS[9][5] = {
     {0x06, 0x49, 0x49, 0x29, 0x1e}
 };
 
-inline void matrixFrame(const char *text, uint8_t (&rows)[8]) {
+inline void matrixFrame(const char *text, uint8_t (&rows)[8], int index = -1) {
     memset(rows,0,8);
     bool brake=text[0]=='B' && text[1]>='1' && text[1]<='8' && text[2]==0;
     bool power=text[0]=='P' && text[1]>='1' && text[1]<='5' && text[2]==0;
@@ -35,16 +42,21 @@ inline void matrixFrame(const char *text, uint8_t (&rows)[8]) {
     else {for(int i=0;i<5;++i) columns[i]=8;}
     auto pixel=[&](int x,int y) {
         if(MIRROR_X) x=7-x;
-        for(uint8_t r=0;r<ROTATION%4;++r) {int previousX=x;x=7-y;y=previousX;}
+        for(uint8_t r=0;r<matrixSettings.rotation;++r) {int previousX=x;x=7-y;y=previousX;}
         rows[y]|=uint8_t(0x80U>>x);
     };
+    if(index >= 0 && index < 15 && (matrixSettings.customMask & (1U << index))) {
+        for(int y=0;y<8;++y) for(int x=0;x<8;++x)
+            if(matrixSettings.patterns[index][y] & (0x80U >> x)) pixel(x,y);
+        return;
+    }
     for(int col=0;col<5;++col) for(int y=0;y<7;++y)
         if(columns[col] & (1U<<y)) pixel(col+1,y);
     // Separate bottom-right LED identifies B1..B8; clear for power, N and E.
     if(brake) pixel(7,7);
 }
-inline void matrixShow(const char *text) {
-    uint8_t rows[8]; matrixFrame(text,rows);
+inline void matrixShow(const char *text, int index = -1) {
+    uint8_t rows[8]; matrixFrame(text,rows,index);
     static uint8_t previous[8]={};
     static bool first=true;
     for(uint8_t row=0;row<8;++row) if(first || rows[row]!=previous[row]) {

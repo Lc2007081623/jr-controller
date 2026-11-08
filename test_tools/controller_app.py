@@ -5,12 +5,17 @@ import sys
 from pathlib import Path
 import time
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 from serial_protocol import AutoDriveGate
 from serial_notch_bridge import Reader, App as CalibrationApp
-from output_profiles import MODES,ZUIKI,BVE,TRAIN_CREW,load_mode,save_mode,create_backend
-from ui_theme import apply_theme,button_strip,update_buttons,BG,CARD,INK,MUTED,BLUE,GREEN,RED,AMBER
+from output_profiles import MODES,XBOX,ZUIKI,BVE,TRAIN_CREW,load_mode,save_mode,create_backend,load_settings,save_settings
+from ui_theme import apply_theme,button_strip,update_buttons
+from settings_ui import THEMES, DEFAULT_PORT, SettingsWindow, led_settings, led_command
+from local_state_api import LocalStateAPI, OFFLINE
+from update_check import VERSION
+from hardware_update import HardwareUpdater, hardware_label
+from game_guides import GUIDES
 
 TITLE='JR 控制器'
 
@@ -23,27 +28,64 @@ class App:
         self.gate=AutoDriveGate();self.retry_at=0;self.pad_retry_at=0
         self.opened_at=0;self.last_sample_at=0;self.calibration=None;self.closing=False
         self.output_mode=load_mode()
-        apply_theme(root);root.title(TITLE);root.geometry('760x740');root.resizable(False,False)
+        prefs = load_settings()
+        theme = prefs.get('theme')
+        self.theme = theme if isinstance(theme, str) and theme in THEMES else '绿色'
+        self.settings_window = None
+        self.state_api = None
+        self.api_enabled = prefs.get('api_enabled') is True
+        port = prefs.get('api_port')
+        self.api_port = port if type(port) is int and 1024 <= port <= 65535 else DEFAULT_PORT
+        self.led_settings = led_settings(prefs.get('led'))
+        self.led_sent = None
+        self.led_status = tk.StringVar(value='等待控制器连接')
+        self.hardware_text = tk.StringVar(value='未识别硬件')
+        self.updater = HardwareUpdater(self)
         self.status=tk.StringVar(value='正在连接控制器…')
         self.live=tk.StringVar(value='插入 USB 后自动连接')
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
-        header=tk.Frame(root,bg=INK,padx=28,pady=20);header.pack(fill='x')
-        tk.Label(header,text='JR / CONTROLLER',bg=INK,fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
-        tk.Label(header,text='CONTROL DESK  /  1.0.0',bg=INK,fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
+        self.mode=tk.StringVar(value=self.output_mode)
+        self.mode_hint=tk.StringVar()
+        root.title(TITLE);root.geometry('820x750');root.minsize(765,690)
+        self.dashboard = ttk.Frame(root)
+        self.dashboard.pack(fill='both',expand=True)
+        self.set_theme(self.theme)
+        if self.api_enabled:
+            try:
+                self.state_api = LocalStateAPI(self.api_port)
+            except OSError:
+                self.status.set('本机接口端口被占用，请在软件设置中更换端口')
+        root.protocol('WM_DELETE_WINDOW',self.close);root.after(20,self.tick)
+
+    def set_theme(self, theme):
+        self.theme = theme
+        apply_theme(self.root, THEMES[theme])
+        for child in self.dashboard.winfo_children():
+            child.destroy()
+        self.build_dashboard()
+
+    def build_dashboard(self):
+        root = self.dashboard
+        BG,CARD,INK,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
+        header=tk.Frame(root,bg='#13283A',padx=28,pady=20);header.pack(fill='x')
+        tk.Label(header,text='JR / CONTROLLER',bg='#13283A',fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
+        tk.Label(header,text=f'CONTROL DESK  /  {VERSION}',bg='#13283A',fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
         tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
         body=ttk.Frame(root,padding=(26,20));body.pack(fill='both',expand=True)
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,14))
         ttk.Label(games,text='游戏模式').pack(side='left',padx=(0,12))
-        self.mode=tk.StringVar(value=self.output_mode)
         self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=32)
         self.mode_box.pack(side='left',fill='x',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
-        self.mode_hint=tk.StringVar();self.update_mode_hint()
+        ttk.Button(games,text='接入说明',command=self.open_mode_guide).pack(side='left',padx=(10,0))
+        self.update_mode_hint()
         ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,14))
         status_card=tk.Frame(body,bg=CARD,padx=18,pady=15);status_card.pack(fill='x',pady=(0,14))
-        self.badge=tk.Label(status_card,text='● 等待连接',bg='#EDF2FA',fg=MUTED,font=('Microsoft YaHei UI',10,'bold'),padx=10,pady=5)
+        self.badge=tk.Label(status_card,text='● 等待连接',bg=TILE,fg=MUTED,font=('Microsoft YaHei UI',10,'bold'),padx=10,pady=5)
         self.badge.pack(side='right',anchor='n')
         tk.Label(status_card,textvariable=self.status,bg=CARD,fg=INK,font=('Microsoft YaHei UI',12,'bold'),wraplength=470,anchor='w',justify='left').pack(anchor='w',pady=(0,7))
         tk.Label(status_card,textvariable=self.live,bg=CARD,fg=MUTED,font=('Segoe UI',10),anchor='w').pack(anchor='w')
+        tk.Label(status_card,textvariable=self.hardware_text,bg=CARD,fg=MUTED,
+                 wraplength=730,justify='left').pack(anchor='w',pady=(5,0))
         metrics=tk.Frame(body,bg=BG);metrics.pack(fill='x',pady=(0,14))
         metrics.columnconfigure((0,1),weight=1,uniform='metric')
         main=tk.Frame(metrics,bg=CARD,padx=22,pady=16);main.grid(row=0,column=0,sticky='nsew',padx=(0,7))
@@ -55,22 +97,67 @@ class App:
         tk.Label(direction,textvariable=self.reverser_text,bg=CARD,fg=INK,font=('Microsoft YaHei UI',23,'bold'),pady=14).pack(anchor='w')
         selector=tk.Frame(direction,bg=CARD);selector.pack(anchor='w',pady=(0,6));self.direction_labels={}
         for value in ('F','N','R'):
-            label=tk.Label(selector,text=value,bg='#EDF2FA',fg=MUTED,font=('Segoe UI',11,'bold'),width=4,pady=5)
+            label=tk.Label(selector,text=value,bg=TILE,fg=MUTED,font=('Segoe UI',11,'bold'),width=4,pady=5)
             label.pack(side='left',padx=(0,6));self.direction_labels[value]=label
         buttons=tk.Frame(body,bg=CARD,padx=14,pady=12);buttons.pack(fill='x',pady=(0,18))
         tk.Label(buttons,text='03  /  实体按键',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w',padx=6,pady=(0,8))
         strip,self.key_labels=button_strip(buttons);strip.pack(anchor='w')
         row=ttk.Frame(body);row.pack(fill='x')
-        ttk.Button(row,text='校准与设置',style='Accent.TButton',command=self.calibrate).pack(side='left')
-        ttk.Button(row,text='最小化',command=root.iconify).pack(side='left',padx=10)
+        ttk.Button(row,text='设备校准',style='Accent.TButton',command=self.calibrate).pack(side='left')
+        ttk.Button(row,text='软件设置',command=self.open_settings).pack(side='left',padx=10)
         ttk.Button(row,text='使用说明',command=self.open_guide).pack(side='left')
         ttk.Button(row,text='退出',command=self.close).pack(side='right')
         ttk.Label(body,text='校准保存在控制器中  ·  USB 自动连接  ·  实时跟随当前位置',style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(16,0))
-        root.protocol('WM_DELETE_WINDOW',self.close);root.after(20,self.tick)
 
-    def open_guide(self):
+    def open_settings(self):
+        if self.settings_window and self.settings_window.window.winfo_exists():
+            self.settings_window.window.lift()
+        else:
+            self.settings_window = SettingsWindow(self)
+
+    def save_preferences(self, **changes):
+        try:
+            save_settings(**changes)
+            return True
+        except OSError as error:
+            messagebox.showerror('软件设置', f'无法保存设置。\n{error}', parent=self.root)
+            return False
+
+    def configure_api(self, enabled, port):
+        previous = self.state_api
+        replacement = previous if enabled and previous and self.api_port == port else None
+        if enabled and replacement is None:
+            try:
+                replacement = LocalStateAPI(port)
+            except OSError:
+                return '无法开启接口，请更换一个未被占用的端口。'
+        if not self.save_preferences(api_enabled=enabled, api_port=port):
+            if replacement and replacement is not previous:
+                replacement.close()
+            return '原来的接口设置仍在使用。'
+        self.api_enabled, self.api_port, self.state_api = enabled, port, replacement
+        if previous and previous is not replacement:
+            previous.close()
+        return '接口已开启。' if enabled else '接口已关闭。'
+
+    def open_mode_guide(self):
+        window = tk.Toplevel(self.root)
+        window.title(self.output_mode + ' · 接入说明')
+        window.geometry('670x500')
+        window.configure(bg=THEMES[self.theme][0])
+        body = ttk.Frame(window,padding=24)
+        body.pack(fill='both',expand=True)
+        ttk.Label(body,text=self.output_mode,style='Title.TLabel').pack(anchor='w',pady=(0,16))
+        for index, step in enumerate(GUIDES[self.output_mode], 1):
+            ttk.Label(body,text=f'{index:02}  {step}',wraplength=600,
+                      justify='left').pack(anchor='w',pady=(0,10))
+        mode = self.output_mode
+        ttk.Button(body,text='打开完整说明',command=lambda: self.open_guide(mode)).pack(anchor='w',pady=8)
+
+    def open_guide(self, mode=None):
         import os
-        filename='train_crew_guide.html' if self.output_mode==TRAIN_CREW else 'bve_guide.html' if self.output_mode==BVE else 'first_steps.html'
+        mode = mode or self.output_mode
+        filename='train_crew_guide.html' if mode==TRAIN_CREW else 'bve_guide.html' if mode==BVE else 'first_steps.html'
         path=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]/'installer'))/filename
         try:os.startfile(path)
         except OSError:self.status.set('使用说明无法打开，请查看安装目录中的 '+filename)
@@ -83,7 +170,7 @@ class App:
             self.mode_hint.set('BVE 5/6 · 游戏中启用 JR Controller 输入插件；主手柄、换向器及四按键直接输入。')
             return
         self.mode_hint.set('ZUIKI PRO · 主手柄 / 换向器 / 四按键。先打开本程序，再启动游戏；关闭 Steam Input。'
-                           if self.output_mode==ZUIKI else 'Xbox · 主手柄 / 换向器 / 四按键。连接后立即跟随当前档位。')
+                           if self.output_mode==ZUIKI else 'Xbox · Steam 版使用 Tsukasa Mascon 布局。直连版本的操作见接入说明。')
 
     def change_mode(self,event=None):
         mode=self.mode.get()
@@ -94,20 +181,21 @@ class App:
         except OSError:self.status.set('模式已切换，但未能保存设置；下次启动需重新选择')
 
     def render(self):
+        _,_,_,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
         sample=self.gate.sample
         self.notch_text.set(sample.notch if sample else '—')
         rev=sample.reverser if sample else None
         self.reverser_text.set({'F':'前进 F','N':'空挡 N','R':'后退 R','X':'异常'}.get(rev,'—'))
         for value,label in self.direction_labels.items():
-            label.configure(bg=BLUE if value==rev else '#EDF2FA',fg='white' if value==rev else MUTED)
+            label.configure(bg=BLUE if value==rev else TILE,fg='white' if value==rev else MUTED)
         color=RED if sample and sample.notch.startswith(('B','E')) else GREEN if sample and sample.notch.startswith('P') else BLUE
         self.notch_label.configure(fg=color)
         update_buttons(self.key_labels,sample.buttons if sample else 0)
-        if self.calibration:text,fg,bg='● 校准中',BLUE,'#EAF0FF'
-        elif self.gate.armed:text,fg,bg='● 已就绪',GREEN,'#E5F5EE'
-        elif not self.pad:text,fg,bg='● 等待驱动',RED,'#FCEEF0'
-        elif self.reader:text,fg,bg='● 待就绪',AMBER,'#FFF4DE'
-        else:text,fg,bg='● 等待连接',MUTED,'#EDF2FA'
+        if self.calibration:text,fg,bg='● 校准中',BLUE,TILE
+        elif self.gate.armed:text,fg,bg='● 已就绪',GREEN,TILE
+        elif not self.pad:text,fg,bg='● 等待驱动',RED,TILE
+        elif self.reader:text,fg,bg='● 待就绪',AMBER,TILE
+        else:text,fg,bg='● 等待连接',MUTED,TILE
         self.badge.configure(text=text,fg=fg,bg=bg)
 
     def release(self):
@@ -131,9 +219,16 @@ class App:
         if reader:
             reader.stop_event.set();reader.join(timeout=1)
         self.gate=AutoDriveGate();self.retry_at=time.monotonic()+1
+        self.led_sent = None
+        self.led_status.set('等待控制器连接')
+        self.hardware_text.set('未识别硬件')
+        if self.state_api:
+            self.state_api.snapshot = OFFLINE
         self.live.set('插入 USB 后自动连接')
 
     def calibrate(self):
+        if self.updater.busy:
+            return
         if self.calibration:
             self.calibration.root.lift();return
         port=self.reader.port if self.reader else None
@@ -160,6 +255,9 @@ class App:
 
     def tick(self):
         if self.closing:return
+        if self.updater.busy is True:
+            self.root.after(20,self.tick)
+            return
         now=time.monotonic()
         if not self.pad and now>=self.pad_retry_at:
             self.pad_retry_at=now+5
@@ -184,6 +282,11 @@ class App:
             if owner is not self.reader:continue
             if kind=='sample':
                 if self.gate.receive(value,arrival):self.last_sample_at=arrival
+            elif kind == 'info' and isinstance(value, dict) and value.get('type') == 'ack':
+                if value.get('message') == 'led_config_applied':
+                    self.led_status.set('固件已接收并应用点阵设置')
+                elif value.get('message') == 'error_led_config':
+                    self.led_status.set('设备拒绝点阵设置，请检查固件版本')
             elif kind in ('closed','error'):
                 self.disconnect();self.status.set('控制器已断开，等待重新连接')
         if self.reader and now-self.last_sample_at>3:
@@ -209,11 +312,40 @@ class App:
                 self.live.set(f'{self.reader.port if self.reader else "USB"}  ·  {sample.sensor}  ·  {sample.raw*360/4096:.1f}°' if sample.sensor=='AS5600' else f'位置采样 {sample.adc}')
                 if not sample.sensor_ok:self.status.set('传感器连接异常，请检查磁铁与接线')
                 elif not sample.calibrated:self.status.set('请先点击“校准”完成主手柄校准')
-                elif self.pad:self.status.set('已连接，可以开始游戏' if self.gate.armed else self.gate.reason)
+                elif self.pad:self.status.set('控制器输出已就绪' if self.gate.armed else self.gate.reason)
+        self.publish_state(now)
         self.render();self.root.after(20,self.tick)
 
+    def publish_state(self, now):
+        sample = self.gate.sample
+        fresh = bool(sample and not self.calibration and self.reader and 0 <= now-self.last_sample_at <= .15)
+        self.updater.observe(sample if fresh else None, now)
+        if fresh:
+            self.hardware_text.set(hardware_label(sample))
+            if not sample.led_config:
+                self.led_status.set('此固件不支持点阵设置，请先更新固件')
+            elif self.led_sent != sample.boot:
+                try:
+                    self.reader.commands.put_nowait(led_command(self.led_settings))
+                    self.led_sent = sample.boot
+                    self.led_status.set('已发送，等待固件确认…')
+                except queue.Full:
+                    pass
+        if self.state_api:
+            valid = bool(fresh and sample.calibrated and sample.sensor_ok and sample.reverser != 'X')
+            self.state_api.snapshot = dict(OFFLINE, connected=fresh, valid=valid,
+                                           notch=sample.notch if valid else None,
+                                           reverser=sample.reverser if valid else None,
+                                           buttons=sample.buttons if valid else 0,
+                                           hardware=sample.model if fresh else None)
+
+
     def close(self):
+        if self.updater.busy:
+            return
         self.closing=True
+        if self.state_api:
+            self.state_api.close()
         if self.calibration:self.calibration.close()
         self.disconnect();self.drop_pad();self.root.destroy()
 
