@@ -1,14 +1,50 @@
 import unittest
 import queue
 import time
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from types import SimpleNamespace
 from serial_protocol import AutoDriveGate,parse_sample
 from test_serial_protocol import frame
 from controller_app import controller_ports,App
-from output_profiles import BVE,TRAIN_CREW
+from output_profiles import BVE,TRAIN_CREW,XBOX,ZUIKI
 
 class AutomaticTests(unittest.TestCase):
+    def test_jr_launcher_switches_mode_waits_and_starts_once(self):
+        entry = r'C:\Games\JR EAST\JREAST_TrainSimulator.exe'
+        app = Mock()
+        app.jr_pending = None
+        app.output_mode = ZUIKI
+        app.change_mode.side_effect = lambda: App.change_mode(app)
+        app.cancel_jr_launch.side_effect = lambda: App.cancel_jr_launch(app)
+        app.mode.get.return_value = XBOX
+        app.gate.armed = False
+        with patch('controller_app.load_settings', return_value={'jr_launch_entry': entry}), \
+             patch('controller_app.Path.is_file', return_value=True), \
+             patch('controller_app.save_mode'), patch('controller_app.os.startfile') as start:
+            App.request_jr_launch(app)
+            self.assertEqual(app.output_mode, XBOX)
+            app.drop_pad.assert_called_once()
+            App.launch_jr_if_ready(app)
+            start.assert_not_called()
+            app.gate.armed = True
+            App.launch_jr_if_ready(app)
+            App.launch_jr_if_ready(app)
+            start.assert_called_once_with(entry, cwd=r'C:\Games\JR EAST')
+
+    def test_jr_launcher_warns_if_game_starts_while_waiting(self):
+        app = Mock()
+        app.jr_pending = 'steam://rungameid/2111630'
+        app.output_mode = XBOX
+        app.gate.armed = True
+        app.jr_can_start.side_effect = lambda entry: App.jr_can_start(app, entry)
+        with patch('controller_app.jr_game_running', return_value=True), \
+             patch('controller_app.messagebox.showwarning') as warn, \
+             patch('controller_app.os.startfile') as start:
+            App.launch_jr_if_ready(app)
+            app.cancel_jr_launch.assert_called_once()
+            warn.assert_called_once()
+            start.assert_not_called()
+
     def test_bve_heartbeat_even_with_unchanged_notch_and_release_on_pause(self):
         for mode in (BVE,TRAIN_CREW):
             app=Mock();app.output_mode=mode;app.closing=False;app.calibration=None

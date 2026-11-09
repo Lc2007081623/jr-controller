@@ -15,7 +15,7 @@ from tkinter import ttk, filedialog
 import winreg
 
 APP_NAME='JR Controller'
-VERSION='1.1.1'
+VERSION='1.1.2'
 UNINSTALL_KEY=r'Software\Microsoft\Windows\CurrentVersion\Uninstall\JRController'
 RUN_KEY=r'Software\Microsoft\Windows\CurrentVersion\Run'
 
@@ -173,6 +173,9 @@ def main():
     body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
     ttk.Label(body,text='JR 控制器'+('卸载' if removing else '完整安装'),font=('Microsoft YaHei',21,'bold')).pack(anchor='w')
     ttk.Label(body,text='Windows 10 / 11 · 64 位 · '+VERSION).pack(anchor='w',pady=(3,16))
+    if not removing:
+        ttk.Label(body,text='安装前请先退出 360 等杀毒软件，安装完成后请重新开启。',
+                  wraplength=565).pack(anchor='w',pady=(0,8))
     steps=[tk.StringVar(value=text) for text in ('1  检查电脑与手柄驱动','2  安装程序、插件与离线说明','3  验证三个游戏模式','4  完成安装，连接硬件')]
     if not removing:
         for text in steps:ttk.Label(body,textvariable=text,font=('Microsoft YaHei',11)).pack(anchor='w',pady=5)

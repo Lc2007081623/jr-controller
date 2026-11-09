@@ -3,7 +3,7 @@ import json
 import re
 from urllib.request import Request, urlopen
 
-VERSION = '1.1.1'
+VERSION = '1.1.2'
 RELEASES = 'https://github.com/Lc2007081623/jr-controller/releases'
 ENDPOINT = 'https://api.github.com/repos/Lc2007081623/jr-controller/releases/latest'
 

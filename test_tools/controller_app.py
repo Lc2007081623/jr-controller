@@ -1,11 +1,14 @@
 """Small automatic bridge. Calibration remains in the existing dedicated window."""
+import csv
 import ctypes
+import os
 import queue
+import subprocess
 import sys
 from pathlib import Path
 import time
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, filedialog, messagebox
 
 from serial_protocol import AutoDriveGate
 from serial_notch_bridge import Reader, App as CalibrationApp
@@ -18,9 +21,19 @@ from hardware_update import HardwareUpdater, hardware_name, hardware_details
 from game_guides import GUIDES
 
 TITLE='JR 控制器'
+JR_STEAM_URI = 'steam://rungameid/2111630'
+JR_GAME_EXE = 'JREAST_TrainSimulator.exe'
 
 def controller_ports(ports):
     return [p.device for p in ports if (p.vid,p.pid)==(0x303a,0x1001)]
+
+def jr_game_running(entry):
+    names = {JR_GAME_EXE.casefold(), Path(entry).name.casefold()}
+    result = subprocess.run(['tasklist.exe', '/fo', 'csv', '/nh'], check=True,
+                            capture_output=True, encoding='oem', errors='replace',
+                            creationflags=subprocess.CREATE_NO_WINDOW, timeout=5)
+    return any(row and row[0].casefold() in names for row in csv.reader(result.stdout.splitlines()))
+
 
 class App:
     def __init__(self,root):
@@ -47,6 +60,8 @@ class App:
         self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
         self.mode=tk.StringVar(value=self.output_mode)
         self.mode_hint=tk.StringVar()
+        self.jr_pending = None
+        self.jr_button_text = tk.StringVar(value='启动 JR EAST')
         root.title(TITLE);root.geometry('820x780');root.minsize(765,780)
         self.dashboard = ttk.Frame(root)
         self.dashboard.pack(fill='both',expand=True)
@@ -75,8 +90,10 @@ class App:
         body=ttk.Frame(root,padding=(26,14));body.pack(fill='both',expand=True)
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,10))
         ttk.Label(games,text='游戏模式').pack(side='left',padx=(0,12))
-        self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=32)
+        self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=28)
         self.mode_box.pack(side='left',fill='x',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
+        ttk.Button(games,textvariable=self.jr_button_text,command=self.request_jr_launch).pack(side='left',padx=(10,0))
+        ttk.Button(games,text='启动设置',command=self.choose_jr_entry).pack(side='left',padx=(10,0))
         ttk.Button(games,text='接入说明',command=self.open_mode_guide).pack(side='left',padx=(10,0))
         self.update_mode_hint()
         ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,10))
@@ -166,7 +183,6 @@ class App:
         ttk.Button(body,text='打开完整说明',command=lambda: self.open_guide(mode)).pack(anchor='w',pady=8)
 
     def open_guide(self, mode=None):
-        import os
         mode = mode or self.output_mode
         filename='train_crew_guide.html' if mode==TRAIN_CREW else 'bve_guide.html' if mode==BVE else 'first_steps.html'
         path=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]/'installer'))/filename
@@ -186,10 +202,71 @@ class App:
     def change_mode(self,event=None):
         mode=self.mode.get()
         if mode not in MODES or mode==self.output_mode:return
+        if mode != XBOX and self.jr_pending:
+            self.cancel_jr_launch()
         self.release();self.drop_pad();self.output_mode=mode;self.pad_retry_at=0
         self.update_mode_hint();self.status.set('正在切换游戏模式…')
         try:save_mode(mode)
         except OSError:self.status.set('模式已切换，但未能保存设置；下次启动需重新选择')
+
+    def choose_jr_entry(self):
+        self.cancel_jr_launch()
+        steam = messagebox.askyesnocancel('JR EAST 启动设置',
+            '选择“是”通过 Steam 启动，选择“否”指定游戏 EXE。', parent=self.root)
+        if steam is None:
+            return None
+        entry = JR_STEAM_URI if steam else filedialog.askopenfilename(
+            parent=self.root, title='选择 JR EAST 游戏 EXE', filetypes=[('游戏程序', '*.exe')])
+        if not entry:
+            return None
+        try:
+            save_settings(jr_launch_entry=entry)
+        except OSError as exc:
+            messagebox.showerror('JR EAST 启动设置', f'无法保存启动入口：{exc}', parent=self.root)
+        return entry
+
+    def request_jr_launch(self):
+        if self.jr_pending:
+            self.cancel_jr_launch()
+            return
+        entry = load_settings().get('jr_launch_entry')
+        if entry != JR_STEAM_URI and (not isinstance(entry, str) or not Path(entry).is_file()):
+            entry = self.choose_jr_entry()
+        if not entry or not self.jr_can_start(entry):
+            return
+        self.mode.set(XBOX)
+        self.change_mode()
+        self.jr_pending = entry
+        self.jr_button_text.set('取消启动')
+
+    def cancel_jr_launch(self):
+        self.jr_pending = None
+        self.jr_button_text.set('启动 JR EAST')
+
+    def jr_can_start(self, entry):
+        try:
+            if not jr_game_running(entry):
+                return True
+            detail = 'JR EAST 已在运行。请退出游戏，再点击“启动 JR EAST”。'
+        except (OSError, subprocess.SubprocessError) as exc:
+            detail = f'无法检查 JR EAST 是否在运行：{exc}'
+        messagebox.showwarning('启动 JR EAST', detail, parent=self.root)
+        return False
+
+    def launch_jr_if_ready(self):
+        entry = self.jr_pending
+        if not (entry and self.output_mode == XBOX and self.pad and self.gate.armed):
+            return
+        self.cancel_jr_launch()
+        if not self.jr_can_start(entry):
+            return
+        try:
+            if entry == JR_STEAM_URI:
+                os.startfile(entry)
+            else:
+                os.startfile(entry, cwd=str(Path(entry).parent))
+        except OSError as exc:
+            messagebox.showerror('启动 JR EAST', f'启动失败，请检查启动设置：{exc}', parent=self.root)
 
     def render(self):
         _,_,_,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
@@ -325,6 +402,7 @@ class App:
                 if not sample.sensor_ok:self.status.set('传感器连接异常，请检查磁铁与接线')
                 elif not sample.calibrated:self.status.set('请先点击“校准”完成主手柄校准')
                 elif self.pad:self.status.set('控制器输出已就绪' if self.gate.armed else self.gate.reason)
+            self.launch_jr_if_ready()
         self.publish_state(now)
         self.render();self.root.after(20,self.tick)
 
