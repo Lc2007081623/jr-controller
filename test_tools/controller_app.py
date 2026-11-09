@@ -92,9 +92,10 @@ class App:
         ttk.Label(games,text='游戏模式').pack(side='left',padx=(0,12))
         self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=28)
         self.mode_box.pack(side='left',fill='x',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
-        ttk.Button(games,textvariable=self.jr_button_text,command=self.request_jr_launch).pack(side='left',padx=(10,0))
-        ttk.Button(games,text='启动设置',command=self.choose_jr_entry).pack(side='left',padx=(10,0))
         ttk.Button(games,text='接入说明',command=self.open_mode_guide).pack(side='left',padx=(10,0))
+        self.jr_controls = ttk.Frame(games)
+        ttk.Button(self.jr_controls,textvariable=self.jr_button_text,command=self.request_jr_launch).pack(side='left',padx=(10,0))
+        ttk.Button(self.jr_controls,text='启动设置',command=self.choose_jr_entry).pack(side='left',padx=(10,0))
         self.update_mode_hint()
         ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,10))
         status_card = tk.Frame(body, bg=CARD, padx=20, pady=12)
@@ -190,6 +191,10 @@ class App:
         except OSError:self.status.set('使用说明无法打开，请查看安装目录中的 '+filename)
 
     def update_mode_hint(self):
+        if self.output_mode == XBOX:
+            self.jr_controls.pack(side='left')
+        else:
+            self.jr_controls.pack_forget()
         if self.output_mode==TRAIN_CREW:
             self.mode_hint.set('TRAIN CREW · 先选本模式，再启动游戏并启用“外部设备输入输出”；A气笛 / B电笛 / X警报确认 / Y联络蜂鸣。B7/B8均为常用最大制动。')
             return
@@ -226,6 +231,8 @@ class App:
         return entry
 
     def request_jr_launch(self):
+        if self.output_mode != XBOX:
+            return
         if self.jr_pending:
             self.cancel_jr_launch()
             return
@@ -234,8 +241,6 @@ class App:
             entry = self.choose_jr_entry()
         if not entry or not self.jr_can_start(entry):
             return
-        self.mode.set(XBOX)
-        self.change_mode()
         self.jr_pending = entry
         self.jr_button_text.set('取消启动')
 

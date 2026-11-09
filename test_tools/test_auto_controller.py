@@ -9,21 +9,21 @@ from controller_app import controller_ports,App
 from output_profiles import BVE,TRAIN_CREW,XBOX,ZUIKI
 
 class AutomaticTests(unittest.TestCase):
-    def test_jr_launcher_switches_mode_waits_and_starts_once(self):
+    def test_jr_launcher_waits_and_starts_once_in_xbox_mode(self):
         entry = r'C:\Games\JR EAST\JREAST_TrainSimulator.exe'
         app = Mock()
         app.jr_pending = None
         app.output_mode = ZUIKI
-        app.change_mode.side_effect = lambda: App.change_mode(app)
         app.cancel_jr_launch.side_effect = lambda: App.cancel_jr_launch(app)
-        app.mode.get.return_value = XBOX
         app.gate.armed = False
-        with patch('controller_app.load_settings', return_value={'jr_launch_entry': entry}), \
+        with patch('controller_app.load_settings', return_value={'jr_launch_entry': entry}) as load, \
              patch('controller_app.Path.is_file', return_value=True), \
-             patch('controller_app.save_mode'), patch('controller_app.os.startfile') as start:
+             patch('controller_app.os.startfile') as start:
             App.request_jr_launch(app)
-            self.assertEqual(app.output_mode, XBOX)
-            app.drop_pad.assert_called_once()
+            load.assert_not_called()
+            self.assertIsNone(app.jr_pending)
+            app.output_mode = XBOX
+            App.request_jr_launch(app)
             App.launch_jr_if_ready(app)
             start.assert_not_called()
             app.gate.armed = True
