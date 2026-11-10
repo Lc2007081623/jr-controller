@@ -14,18 +14,48 @@ uint32_t forwardChangedAt = 0, forwardCount = 0;
 #if CONFIG_IDF_TARGET_ESP32C3
 #include "reverser_calibration.h"
 #include "button_calibration.h"
-uint8_t inputsRaw = 0, inputsStable = 0;
+int inputsRaw = -1;
+uint8_t inputsStable = 0;
+bool inputsValid = false;
 uint8_t reverserMap[3] = {1,0,2}, reverserPending[3] = {};
 uint8_t reverserCaptured = 0;
 bool reverserCollecting = false;
 uint8_t buttonMap[4]={1,2,4,8}, buttonPending[4]={}, buttonCaptured=0;
 bool buttonCollecting=false;
 uint32_t inputsChangedAt = 0;
-uint8_t readInputs() {
+#ifdef JR_HIDARI_2
+uint32_t inputsAt = 0;
+
+constexpr uint8_t decodeInputs(uint8_t port) {
+    // The protocol mask puts forward/reverse below the four buttons.
+    return ((uint8_t(~port) & 0x0f) << 2) | ((uint8_t(~port) & 0x30) >> 4);
+}
+static_assert(decodeInputs(0xff) == 0 && decodeInputs(0xf0) == 0x3c &&
+              decodeInputs(0xef) == 1 && decodeInputs(0xdf) == 2 &&
+              decodeInputs(0x00) == 0x3f, "Hidari 2 contact mapping");
+
+int readInputs() {
+    static bool initialized = false;
+    if (!initialized) {
+        Wire.beginTransmission(PCF8574_ADDRESS);
+        Wire.write(uint8_t{0xff});  // Release all quasi-bidirectional pins for input.
+        if (Wire.endTransmission() != 0) return -1;
+        initialized = true;
+    }
+    if (Wire.requestFrom(PCF8574_ADDRESS, uint8_t{1}) == 1) {
+        const int port = Wire.read();
+        if (port >= 0) return decodeInputs(uint8_t(port));
+    }
+    initialized = false;
+    return -1;
+}
+#else
+int readInputs() {
     uint8_t bits = (digitalRead(FORWARD_PIN) == LOW) | ((digitalRead(REVERSE_PIN) == LOW) << 1);
     for (int i = 0; i < 4; ++i) bits |= (digitalRead(BUTTON_PINS[i]) == LOW) << (i+2);
     return bits;
 }
+#endif
 #endif
 // Real EB/B8 centers are 16 ADC counts apart; keep a 12-count floor.
 constexpr int COUNT = 15, MIN_GAP = 12;
@@ -49,12 +79,20 @@ const char *const CAL_NAMESPACE = "jr-m3", *const SOURCE = "ADC";
 #endif
 Calibration saved{}, pending{};
 uint16_t captured = 0, rawAdc = 0, filtered = 0;
+#ifndef JR_FIRMWARE_VERSION
+#define JR_FIRMWARE_VERSION 1.1.0
+#endif
+#define JR_STRINGIFY_IMPL(value) #value
+#define JR_STRINGIFY(value) JR_STRINGIFY_IMPL(value)
+constexpr const char *FIRMWARE_VERSION = JR_STRINGIFY(JR_FIRMWARE_VERSION);
 bool calibrated = false, collecting = false, filterReady = false;
 bool positionValid = true, sensorFaultPending = false;
 uint8_t sensorStatus = 0;
 int notch = -1;
 char deviceId[13];
-#if CONFIG_IDF_TARGET_ESP32C3 && defined(JR_USE_AS5600)
+#if defined(JR_HIDARI_2)
+constexpr const char *MODEL = "JR-C3-HIDARI-2";
+#elif CONFIG_IDF_TARGET_ESP32C3 && defined(JR_USE_AS5600)
 constexpr const char *MODEL = "JR-C3-AS5600-R1";
 #elif defined(JR_USE_AS5600)
 constexpr const char *MODEL = "JR-S3-AS5600";
@@ -139,7 +177,7 @@ void runCommand(char *s) {
             for (int i=0;i<4;++i) if (s[5]=="ABXY"[i] && !s[6]) index=i;
             if (index<0) { ack("error_button_name");return; }
             uint8_t raw=inputsStable>>2;
-            if (!raw || (raw&(raw-1)) || readInputs()!=inputsStable || uint32_t(millis()-inputsChangedAt)<60) {
+            if (!inputsValid || !raw || (raw&(raw-1)) || readInputs()!=inputsStable || uint32_t(millis()-inputsChangedAt)<60) {
                 ack("error_button_hold_one");return;
             }
             for (int i=0;i<4;++i) if (i!=index && (buttonCaptured&(1<<i)) && buttonPending[i]==raw) {
@@ -172,7 +210,7 @@ void runCommand(char *s) {
             int index = -1;
             for (int i = 0; i < 3; ++i) if (!strcmp(s+5,names[i])) index = i;
             if (index < 0) { ack("error_reverser_name"); return; }
-            if (readInputs() != inputsStable || uint32_t(millis()-inputsChangedAt) < 60) {
+            if (!inputsValid || readInputs() != inputsStable || uint32_t(millis()-inputsChangedAt) < 60) {
                 ack("error_reverser_hold_still"); return;
             }
             reverserPending[index] = inputsStable & 3;
@@ -311,11 +349,17 @@ void setup() {
 #ifndef JR_USE_AS5600
     pinMode(ADC_PIN, INPUT);
 #endif
+#ifndef JR_HIDARI_2
     pinMode(FORWARD_PIN, INPUT_PULLUP);
+    forwardRaw = forwardPressed = digitalRead(FORWARD_PIN) == LOW;
+#endif
 #if CONFIG_IDF_TARGET_ESP32C3
+#ifndef JR_HIDARI_2
     pinMode(REVERSE_PIN, INPUT_PULLUP);
     for (int pin : BUTTON_PINS) pinMode(pin, INPUT_PULLUP);
     inputsRaw = inputsStable = readInputs();
+    inputsValid = true;
+#endif
     if (prefs.begin("jr-btn",true)) {
         uint8_t map[4]={};
         if (prefs.getBytesLength("map")==4 && prefs.getBytes("map",map,4)==4 && validButtonMap(map))
@@ -329,7 +373,6 @@ void setup() {
         prefs.end();
     }
 #endif
-    forwardRaw = forwardPressed = digitalRead(FORWARD_PIN) == LOW;
     uint64_t mac = ESP.getEfuseMac();
     for (int i = 0; i < 6; ++i)
         snprintf(deviceId + i * 2, 3, "%02x", (unsigned)((mac >> (i * 8)) & 0xff));
@@ -371,9 +414,21 @@ void loop() {
     }
     uint32_t now = millis();
 #if CONFIG_IDF_TARGET_ESP32C3
-    uint8_t inputs = readInputs();
-    if (inputs != inputsRaw) { inputsRaw = inputs; inputsChangedAt = now; }
-    if (uint32_t(now-inputsChangedAt) >= 30) inputsStable = inputsRaw;
+#ifdef JR_HIDARI_2
+    if (uint32_t(now-inputsAt) >= 5) {
+        inputsAt = now;
+#else
+    {
+#endif
+        const int inputs = readInputs();
+        if (inputs != inputsRaw) { inputsRaw = inputs; inputsChangedAt = now; }
+        if (inputs < 0) {
+            inputsValid = false;
+        } else if (uint32_t(now-inputsChangedAt) >= 30) {
+            inputsStable = uint8_t(inputsRaw);
+            inputsValid = true;
+        }
+    }
 #else
     bool pressed = digitalRead(FORWARD_PIN) == LOW;
     if (pressed != forwardRaw) { forwardRaw = pressed; forwardChangedAt = now; }
@@ -388,21 +443,31 @@ void loop() {
         const bool healthy = positionValid && !sensorFaultPending;
         const bool ready = calibrated && !collecting && notch >= 0 && healthy
 #if CONFIG_IDF_TARGET_ESP32C3
-            && !buttonCollecting
+            && inputsValid && !buttonCollecting
 #endif
             ;
+#if CONFIG_IDF_TARGET_ESP32C3
+        char reverser = 'X';
+        if (inputsValid && !reverserCollecting) {
+            for (int i = 0; i < 3; ++i) if ((inputsStable & 3) == reverserMap[i]) reverser = "FNR"[i];
+        }
+#ifdef JR_HIDARI_2
+        forwardPressed = reverser == 'F';
+#endif
+#endif
         Serial.printf("{\"v\":1,\"type\":\"state\",\"boot\":%lu,\"seq\":%lu,\"ms\":%lu,\"raw\":%u,\"adc\":%u,\"calibrated\":%s,\"notch\":\"%s\",\"forward_pressed\":%s,\"forward_count\":%lu,\"sensor\":\"%s\",\"sensor_ok\":%s,\"board\":\"%s\"",
             (unsigned long)bootId, (unsigned long)sequence++, (unsigned long)now,
             rawAdc, filtered, ready ? "true":"false", ready ? names[notch]:"--",
             forwardPressed ? "true":"false", (unsigned long)forwardCount, SOURCE, healthy ? "true":"false", BOARD_NAME);
 #if CONFIG_IDF_TARGET_ESP32C3
-        char reverser = 'X';
-        if (!reverserCollecting) {
-            for (int i = 0; i < 3; ++i) if ((inputsStable & 3) == reverserMap[i]) reverser = "FNR"[i];
-        }
-        Serial.printf(",\"reverser\":\"%c\",\"buttons\":%u", reverser, mappedButtons(inputsStable>>2,buttonMap));
+        Serial.printf(",\"reverser\":\"%c\",\"buttons\":%u", reverser,
+                      inputsValid ? mappedButtons(inputsStable>>2,buttonMap) : 0);
+#ifdef JR_HIDARI_2
+        Serial.printf(",\"inputs_ok\":%s", inputsValid ? "true" : "false");
 #endif
-        Serial.printf(",\"led_config\":true,\"model\":\"%s\",\"firmware\":\"1.1.0\",\"device_id\":\"%s\"}\n", MODEL, deviceId);
+#endif
+        Serial.printf(",\"led_config\":true,\"model\":\"%s\",\"firmware\":\"%s\",\"device_id\":\"%s\"}\n",
+                      MODEL, FIRMWARE_VERSION, deviceId);
         sensorFaultPending = false;
     }
     if (uint32_t(now-displayAt) >= 100) {

@@ -1,14 +1,56 @@
 import unittest
+import hashlib
+import json
 import queue
+import tempfile
 import time
+from pathlib import Path
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
 from serial_protocol import AutoDriveGate,parse_sample
 from test_serial_protocol import frame
 from controller_app import controller_ports,App
+from button_mapping import KeyboardOutput, button_mapping, mapped_outputs
+from hardware_update import firmware_files
 from output_profiles import BVE,TRAIN_CREW,XBOX,ZUIKI
 
 class AutomaticTests(unittest.TestCase):
+    def test_firmware_catalog_matches_exact_model_and_rejects_cross_flash(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            (folder / 'esptool.exe').touch()
+            catalog = {}
+            targets = (('JR-C3-AS5600-R1', 'hidari1', '1.1.0'), ('JR-C3-HIDARI-2', 'hidari2', '1.2.0'))
+            for model, series, version in targets:
+                image = folder / f'{series}-v{version}-app.bin'
+                data = f'{model}\0{version}\0'.encode()
+                image.write_bytes(data)
+                catalog[model] = dict(series=series, version=version, sha256=hashlib.sha256(data).hexdigest())
+            manifest = folder / 'manifest.json'
+            manifest.write_text(json.dumps(catalog), encoding='utf-8')
+            with patch('hardware_update.bundle_path', return_value=folder):
+                for model, series, version in targets:
+                    self.assertEqual(firmware_files(model)[2:], (series, version))
+                self.assertIsNone(firmware_files('UNKNOWN'))
+                first, second = (target[0] for target in targets)
+                catalog[first] = catalog[second]
+                manifest.write_text(json.dumps(catalog), encoding='utf-8')
+                with self.assertRaises(RuntimeError):
+                    firmware_files(first)
+
+    def test_mixed_button_mapping_and_duplicate_key_release(self):
+        mapping = button_mapping({'A':'key:Space','B':'key:Space','X':'xbox:LT','Y':'xbox:RB','Z':'key:A'})
+        self.assertNotIn('Z', mapping)
+        self.assertEqual(mapped_outputs(15, mapping, True), (0, 0x0200, 1, {0x20}))
+        self.assertEqual(mapped_outputs(15, mapping, False), (12, 0xC000, 0, {0x20}))
+        self.assertEqual(mapped_outputs(15, {}, True), (15, 0xF000, 0, set()))
+        keyboard = KeyboardOutput()
+        keyboard.send = Mock()
+        for pressed in (3, 2, 0):
+            keyboard.update(mapped_outputs(pressed, mapping, True)[3])
+        self.assertEqual([call.kwargs['release'] for call in keyboard.send.call_args_list], [False, True])
+        self.assertFalse(keyboard.held)
+
     def test_jr_launcher_waits_and_starts_once_in_xbox_mode(self):
         entry = r'C:\Games\JR EAST\JREAST_TrainSimulator.exe'
         app = Mock()
@@ -51,6 +93,7 @@ class AutomaticTests(unittest.TestCase):
             app.events=queue.Queue();app.last_sample_at=time.monotonic()
             app.gate.sample=self.sample(notch='P3',reverser='F');app.gate.armed=True
             app.gate.update.return_value='P3';app.pad.notch='P3';app.pad.reverser='F'
+            app.button_mapping={};app.mapping_held=0
             App.tick(app)
             app.pad.set.assert_not_called();app.pad.refresh.assert_called_once_with(True)
             App.release(app)
@@ -104,6 +147,7 @@ class AutomaticTests(unittest.TestCase):
         app.gate.sample=self.sample(notch='P5',reverser='R',buttons=3)
         app.gate.update.return_value='P5'
         app.pad.notch='P5';app.pad.reverser='F'
+        app.button_mapping={};app.mapping_held=0
         App.tick(app)
         app.pad.set_reverser.assert_called_once_with('R')
         app.pad.set_buttons.assert_called_once_with(3)

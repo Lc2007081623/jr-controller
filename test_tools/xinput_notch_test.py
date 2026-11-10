@@ -6,6 +6,8 @@ import sys
 import time
 from pathlib import Path
 
+from button_mapping import XBOX_BUTTONS
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / 'python_deps'))
 NOTCHES = {'EB':.96,'B8':.87,'B7':.76,'B6':.655,'B5':.545,'B4':.43,
@@ -45,12 +47,12 @@ def load_vgamepad():
 class Backend:
     def __init__(self):
         self.pad=None
-        self.notch='N';self.reverser='N';self.buttons=0
+        self.notch='N';self.reverser='N';self.buttons=0;self.triggers=0
     def connect(self):
         if self.pad is not None:return
         vgamepad=load_vgamepad()
         self.pad=vgamepad.VX360Gamepad()
-        self.notch='N';self.reverser='N';self.buttons=0
+        self.notch='N';self.reverser='N';self.buttons=0;self.triggers=0
         self.pad.reset();self.pad.update()
     def set(self,name):
         if self.pad is None:raise RuntimeError('Virtual controller is not connected')
@@ -69,17 +71,22 @@ class Backend:
         return y
     def set_buttons(self,mask):
         if type(mask) is not int or not 0 <= mask <= 15:raise ValueError('Invalid button mask')
+        self.set_xbox_buttons(mask << 12, 0)
+
+    def set_xbox_buttons(self, buttons, triggers):
         if self.pad is None:raise RuntimeError('Virtual controller is not connected')
-        if mask==self.buttons:return
-        # XInput A/B/X/Y flags, in carrier GPIO0/10/20/21 order.
-        for i,button in enumerate((0x1000,0x2000,0x4000,0x8000)):
-            if mask & (1<<i):self.pad.press_button(button=button)
-            else:self.pad.release_button(button=button)
-        self.pad.update();self.buttons=mask
+        if (buttons, triggers) == (self.buttons, self.triggers):return
+        for button in XBOX_BUTTONS.values():
+            if (buttons ^ self.buttons) & button:
+                if buttons & button:self.pad.press_button(button=button)
+                else:self.pad.release_button(button=button)
+        if (triggers ^ self.triggers) & 1:self.pad.left_trigger(value=255 if triggers & 1 else 0)
+        if (triggers ^ self.triggers) & 2:self.pad.right_trigger(value=255 if triggers & 2 else 0)
+        self.pad.update();self.buttons=buttons;self.triggers=triggers
     def close(self):
         if self.pad:
             self.pad.reset();self.pad.update();self.pad=None
-        self.buttons=0
+        self.buttons=0;self.triggers=0
 
 def log_event(event):
     event={'time':time.strftime('%Y-%m-%d %H:%M:%S'),**event}

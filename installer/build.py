@@ -1,11 +1,14 @@
 """Build offline installer. Run from any directory with Python 3.12 x64."""
+import configparser
 import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
 ICON=ROOT/'installer/hikari.ico'
@@ -21,18 +24,45 @@ def build_firmware_update():
                     Path(os.environ['LOCALAPPDATA']) / 'Arduino15/packages/esp32/tools/esptool_py/5.3.0')
     destination = ROOT / 'build/firmware_update'
     destination.mkdir(parents=True, exist_ok=True)
-    for filename in ('esptool.exe', 'LICENSE'):
-        shutil.copy2(tool_dir / filename, destination / filename)
-    subprocess.run(['pio', 'run', '-d', 'firmware', '-e', 'c3_as5600_controller'],
-                   cwd=ROOT, check=True)
-    image = destination / 'c3-app.bin'
-    shutil.copy2(ROOT / 'firmware/.pio/build/c3_as5600_controller/firmware.bin', image)
-    metadata = {'model': 'JR-C3-AS5600-R1', 'version': '1.1.0',
-                'sha256': hashlib.sha256(image.read_bytes()).hexdigest()}
-    (destination / 'manifest.json').write_text(json.dumps(metadata), encoding='utf-8')
-    (destination / 'Source.txt').write_text(
-        'Espressif esptool 5.3.0 source: https://github.com/espressif/esptool/tree/v5.3.0\n',
-        encoding='utf-8')
+    config = configparser.ConfigParser(interpolation=None)
+    config.read(ROOT / 'firmware/platformio.ini', encoding='utf-8')
+    catalog = {}
+    series_names = set()
+    with tempfile.TemporaryDirectory(dir=destination.parent) as temp:
+        staging = Path(temp)
+        for section in config.sections():
+            target = config[section]
+            if not section.startswith('env:') or 'custom_firmware_series' not in target:
+                continue
+            environment = section.removeprefix('env:')
+            series = target['custom_firmware_series']
+            model = target['custom_firmware_model']
+            version = target['custom_firmware_version']
+            if (not re.fullmatch(r'hidari[1-9][0-9]*', series) or series in series_names or model in catalog
+                    or not re.fullmatch(r'[A-Z0-9-]{1,32}', model)
+                    or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version)):
+                raise ValueError(f'Invalid firmware target {section}')
+            subprocess.run(['pio', 'run', '-d', 'firmware', '-e', environment], cwd=ROOT, check=True)
+            image = (ROOT / 'firmware/.pio/build' / environment / 'firmware.bin').read_bytes()
+            if any(value.encode('ascii') + b'\0' not in image for value in (model, version)):
+                raise RuntimeError(f'Firmware image metadata does not match {section}')
+            (staging / f'{series}-v{version}-app.bin').write_bytes(image)
+            catalog[model] = dict(series=series, version=version, sha256=hashlib.sha256(image).hexdigest())
+            series_names.add(series)
+        if not catalog:
+            raise RuntimeError('No firmware update targets configured')
+        for filename in ('esptool.exe', 'LICENSE'):
+            shutil.copy2(tool_dir / filename, staging / filename)
+        (staging / 'Source.txt').write_text(
+            'Espressif esptool 5.3.0 source: https://github.com/espressif/esptool/tree/v5.3.0\n', encoding='utf-8')
+        files = {file.name for file in staging.iterdir()}
+        for name in files:
+            (staging / name).replace(destination / name)
+        (staging / 'manifest.json').write_text(json.dumps(catalog, indent=2) + '\n', encoding='utf-8')
+        (staging / 'manifest.json').replace(destination / 'manifest.json')
+        for stale in destination.glob('*-app.bin'):
+            if stale.name not in files:
+                stale.unlink()
 
 
 def main():

@@ -1,6 +1,6 @@
 # Windows 简化安装包
 
-## 当前完整安装包 1.1.2
+## 当前完整安装包 1.1.3
 
 选择 JR EAST（Xbox）模式后，主界面的「启动 JR EAST」可记住 Steam 或游戏 EXE 入口，等控制器输出就绪再启动。安装窗口提示安装前退出 360 等杀毒软件，完成后重新开启。
 
@@ -19,6 +19,12 @@ BVE 5/6 已集成专用插件：可选游戏目录，留空时插件仅放在安
 84 项测试覆盖缺少驱动、已有驱动修复、需要重启、进程自检报告与设备释放等分支。外层安装包尚未代码签名；无驱动全新电脑的实际安装和重启仍需另机验收，本机自检不能替代这个验收。
 
 已对打包 EXE 的 `--self-check` 入口实测，返回码 0，Xbox、Pro、BVE、TRAIN CREW 四项通过；不需要连接硬件或调用本机 Python。内置驱动官方签名有效。官方 1.22.0 EXE 是 Advanced Installer 引导程序，静默安装采用 `/exenoui /qn /norestart`，修复采用 MSI `/fomus //`；参数依据 [引导程序文档](https://docs.advancedinstaller.com/exe-setup-file.html)。
+
+## 多型号固件（1.1.3 起）
+
+每款板在 `firmware/platformio.ini` 有独立的构建环境，分别维护 `custom_firmware_series`、`custom_firmware_model` 和 `custom_firmware_version`。现有两个构建目标为 `hidari1`（`JR-C3-AS5600-R1`）和 `hidari2`（`JR-C3-HIDARI-2`）。单款固件更新时，只提高该环境的版本。
+
+安装器构建会生成 `hidari<编号>-v<版本>-app.bin` 和 `manifest.json`。更新器按设备上报的型号查清单，并核对设备编号、应用分区和 SHA-256。无型号的旧固件需要先确认实物型号，再用对应的 PlatformIO 环境烧录；这个 `.bin` 是应用区更新镜像。
 
 ## 以前版本与开发验证记录
 

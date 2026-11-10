@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 import webbrowser
 
+from button_mapping import BUTTONS, TARGET_LABELS
 from serial_protocol import NOTCH_ORDER
 from update_check import VERSION, RELEASES, check_update
 
@@ -51,11 +52,50 @@ class SettingsWindow:
         matrix = ttk.Frame(tabs, padding=18)
         tabs.add(general, text='常规与更新')
         tabs.add(matrix, text='LED 点阵')
+        buttons = ttk.Frame(tabs, padding=18)
+        tabs.add(buttons, text='按键映射')
         hardware = ttk.Frame(tabs, padding=18)
         tabs.add(hardware, text='硬件与固件')
         app.updater.add_controls(hardware)
         self.general(general)
         self.matrix(matrix)
+        self.buttons(buttons)
+
+    def buttons(self, parent):
+        ttk.Label(parent, text='四个实体按键', style='Section.TLabel').pack(anchor='w')
+        ttk.Label(parent, text='键盘键发送给当前前台窗口。Xbox 360 映射仅在 JR EAST（Xbox）模式生效，其他模式使用该键的游戏默认功能。',
+                  wraplength=510, justify='left').pack(anchor='w', pady=(6, 14))
+        targets = {label: target for target, label in TARGET_LABELS.items()}
+        choices = {}
+        for button in BUTTONS:
+            row = ttk.Frame(parent)
+            row.pack(fill='x', pady=4)
+            ttk.Label(row, text=f'实体 {button}', width=10).pack(side='left')
+            combo = ttk.Combobox(row, values=tuple(targets), state='readonly', width=30, height=18)
+            combo.set(TARGET_LABELS[self.app.button_mapping.get(button, 'default')])
+            combo.pack(side='left')
+            choices[button] = combo
+
+        status = tk.StringVar(value='按键名称以设备校准中的 A / B / X / Y 为准。')
+
+        def save():
+            mapping = {button: targets[combo.get()] for button, combo in choices.items()
+                       if combo.get() != TARGET_LABELS['default']}
+            if self.app.apply_button_mapping(mapping):
+                status.set('已保存。若实体键仍按着，松开后再按即可测试。')
+            else:
+                status.set('保存失败，请检查设置文件权限。')
+
+        def reset():
+            for combo in choices.values():
+                combo.set(TARGET_LABELS['default'])
+            status.set('已选择游戏默认，点击「保存并应用」生效。')
+
+        actions = ttk.Frame(parent)
+        actions.pack(anchor='w', pady=(16, 8))
+        ttk.Button(actions, text='保存并应用', style='Accent.TButton', command=save).pack(side='left')
+        ttk.Button(actions, text='恢复默认', command=reset).pack(side='left', padx=8)
+        ttk.Label(parent, textvariable=status, wraplength=510).pack(anchor='w')
 
     def general(self, parent):
         ttk.Label(parent, text='外观', style='Section.TLabel').pack(anchor='w')

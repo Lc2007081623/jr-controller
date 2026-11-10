@@ -2,10 +2,15 @@
 #include <Arduino.h>
 
 #if CONFIG_IDF_TARGET_ESP32C3
+#ifdef JR_HIDARI_2
+constexpr uint8_t DIN_PIN = 0, CS_PIN = 10, CLK_PIN = 7;
+constexpr uint8_t PCF8574_ADDRESS = 0x20;
+#else
 constexpr uint8_t DIN_PIN = 4, CS_PIN = 3, CLK_PIN = 2;
-constexpr int AS5600_SDA = 6, AS5600_SCL = 5;
 constexpr int FORWARD_PIN = 7, REVERSE_PIN = 1;
 constexpr int BUTTON_PINS[] = {0, 10, 20, 21};
+#endif
+constexpr int AS5600_SDA = 6, AS5600_SCL = 5;
 constexpr const char *BOARD_NAME = "C3";
 // Both contacts closed is invalid; a centre-off switch closes neither.
 constexpr char reverserPosition(uint8_t contacts) {

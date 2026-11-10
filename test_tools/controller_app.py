@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 from serial_protocol import AutoDriveGate
+from button_mapping import KeyboardOutput, button_mapping, mapped_outputs
 from serial_notch_bridge import Reader, App as CalibrationApp
 from output_profiles import MODES,XBOX,ZUIKI,BVE,TRAIN_CREW,load_mode,save_mode,create_backend,load_settings,save_settings
 from ui_theme import apply_theme,button_strip,update_buttons
@@ -42,6 +43,9 @@ class App:
         self.opened_at=0;self.last_sample_at=0;self.calibration=None;self.closing=False
         self.output_mode=load_mode()
         prefs = load_settings()
+        self.button_mapping = button_mapping(prefs.get('button_mapping'))
+        self.keyboard = KeyboardOutput()
+        self.mapping_held = 0
         theme = prefs.get('theme')
         self.theme = theme if isinstance(theme, str) and theme in THEMES else '绿色'
         self.settings_window = None
@@ -291,8 +295,23 @@ class App:
         else:text,fg,bg='● 等待连接',MUTED,TILE
         self.badge.configure(text=text,fg=fg,bg=bg)
 
+    def apply_button_mapping(self, mapping):
+        if not self.save_preferences(button_mapping=mapping):
+            return False
+        self.mapping_held = self.gate.sample.buttons if self.gate.sample else 0
+        self.release()
+        self.button_mapping = mapping
+        return True
+
+    def update_keyboard(self, keys):
+        try:
+            self.keyboard.update(keys)
+        except OSError:
+            self.status.set('键盘输出失败，请检查目标程序是否以管理员身份运行')
+
     def release(self):
         self.gate.disarm()
+        self.update_keyboard(set())
         if self.pad:
             try:
                 self.pad.set_buttons(0);self.pad.set('N');self.pad.set_reverser('N')
@@ -312,6 +331,7 @@ class App:
         if reader:
             reader.stop_event.set();reader.join(timeout=1)
         self.gate=AutoDriveGate();self.retry_at=time.monotonic()+1
+        self.mapping_held = 0
         self.led_sent = None
         self.led_status.set('等待控制器连接')
         self.hardware_name.set('未识别硬件')
@@ -389,6 +409,7 @@ class App:
             now=time.monotonic()
             notch=self.gate.update(now,enabled=self.pad is not None)
             sample=self.gate.sample
+            keys = set()
             if self.pad:
                 try:
                     if self.pad.notch!=notch:self.pad.set(notch)
@@ -398,15 +419,21 @@ class App:
                     elif sample:
                         if sample.reverser in ('F','N','R') and self.pad.reverser!=sample.reverser:
                             self.pad.set_reverser(sample.reverser)
-                        self.pad.set_buttons(sample.buttons)
+                        self.mapping_held &= sample.buttons
+                        native, xbox, triggers, keys = mapped_outputs(
+                            sample.buttons & ~self.mapping_held, self.button_mapping, self.output_mode == XBOX)
+                        if self.output_mode == XBOX:self.pad.set_xbox_buttons(xbox, triggers)
+                        else:self.pad.set_buttons(native)
                     if self.output_mode in (BVE,TRAIN_CREW):self.pad.refresh(self.gate.armed)
                 except Exception:
+                    keys = set()
                     self.release();self.drop_pad();self.status.set('手柄连接异常，正在重试')
             if sample:
                 self.live.set(f'{self.reader.port if self.reader else "USB"}  ·  {sample.sensor}  ·  {sample.raw*360/4096:.1f}°' if sample.sensor=='AS5600' else f'位置采样 {sample.adc}')
                 if not sample.sensor_ok:self.status.set('传感器连接异常，请检查磁铁与接线')
                 elif not sample.calibrated:self.status.set('请先点击“校准”完成主手柄校准')
                 elif self.pad:self.status.set('控制器输出已就绪' if self.gate.armed else self.gate.reason)
+            self.update_keyboard(keys)
             self.launch_jr_if_ready()
         self.publish_state(now)
         self.render();self.root.after(20,self.tick)

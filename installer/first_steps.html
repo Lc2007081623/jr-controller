@@ -1,12 +1,13 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JR 控制器 · 开始使用</title><style>
 body{margin:0;background:#f2f5fa;color:#18283e;font:16px/1.8 "Microsoft YaHei UI",sans-serif}main{max-width:820px;margin:40px auto;padding:32px;background:white;border-radius:16px}h1{margin:0}h2{font-size:21px;margin-top:30px}li{margin:10px 0}aside{padding:16px;background:#eaf1fc;border-radius:10px}table{border-collapse:collapse;width:100%}td,th{padding:12px;border-bottom:1px solid #dde5ef;text-align:left}small{color:#61728a}@media(max-width:700px){main{margin:12px;padding:20px}}
-</style><main><small>JR CONTROLLER / 1.1.2 / Windows 10、11 64 位</small>
+</style><main><small>JR CONTROLLER / 1.1.3 / Windows 10、11 64 位</small>
 <h1>接上控制器，开始驾驶</h1><p>适用于配套、已烧录固件的 ESP32-C3 控制器。安装包已包含运行环境和手柄驱动，不需要 Python，不需要额外下载依赖。</p>
 <h2>1. 安装到电脑</h2><ol><li>退出旧版 JR 控制器和正在运行的游戏。</li><li>双击 <b>JRControllerSetup.exe</b>。Windows 询问是否允许更改设备时，需要管理员同意。若系统拦截安装，请联系提供安装包的人核实文件，不要关闭系统防护。</li><li>点击“一键安装”。等待程序安装驱动、复制程序并检查四个游戏输出模式。</li><li>若提示需要重启，先保存电脑上其他工作并重启，再从桌面打开 <b>JR Controller</b>。未要求重启时，可直接从桌面打开。</li></ol>
 <aside>“登录后自动运行”表示下次登录时最小化运行；安装完成当次请从桌面打开程序。驱动检查不需要连接实体控制器，也不代表游戏已经识别。</aside>
 <h2>2. 用 USB 连接硬件</h2><ol><li>使用能传输数据的 USB 线，连接控制器配套的原生 USB 接口。</li><li>打开 JR Controller。正常情况下会自动连接，不需要选择 COM 口。</li><li>拨动手柄、换向开关并按四个按钮，查看软件中的档位、F/N/R 和按钮亮起状态。</li></ol>
 <aside>选择 JR EAST（Xbox）模式后，点击「启动 JR EAST」。首次选择 Steam 或游戏 EXE，之后软件会等控制器输出就绪再启动游戏。要更换入口，点击「启动设置」。</aside>
+<aside>在「软件设置 → 按键映射」可为四个实体键选择键盘键、Xbox 360 按键、游戏默认或禁用。键盘输入发给当前前台窗口，Xbox 360 映射在 JR EAST（Xbox）模式生效。</aside>
 <aside>连接后立即跟随实体当前位置；断线恢复也是如此。软件的“已就绪”表示控制器输出就绪，游戏识别需要下一步确认。</aside>
 <h2>3. 需要时进行校准</h2><p>成品已校准且显示准确时，可以跳过本步。若显示未校准或方向不符，点击“设备校准”。校准期间暂停游戏输入。</p>
 <ol><li><b>主手柄：</b>点击“开始”，依次拨到 EB、B8～B1、N、P1～P5；每个卡位停稳后点击“采集卡位”，全部 15 点采集后点击“保存”。</li><li><b>换向器：</b>点击“开始”，依次将开关拨到你希望的 F、N、R，分别采集并保存；N 必须是中间断开位置。</li><li><b>按钮：</b>点击“开始”，按住希望用作 A 的实体按钮并采集；依次学习 B、X、Y 四个不同按钮，最后保存。</li><li>保存成功后关闭校准窗口，主窗口恢复连接。校准保存在控制器中，断电保留。未点击保存就关闭，会丢弃本次采集。</li></ol>
@@ -16,7 +17,7 @@ body{margin:0;background:#f2f5fa;color:#18283e;font:16px/1.8 "Microsoft YaHei UI
 <h2>BVE 5/6：首次使用</h2><ol><li>安装时可选择 BVE 5 与 BVE 6 的游戏目录（包含 BveTs.exe）。不安装游戏插件时留空；插件仍附带于程序安装目录的 BVE Plugins 文件夹。</li><li>主窗口选择 <b>BVE 5/6（专用插件）</b>。游戏右键 → Preferences → Input device → 勾选 JR Controller → OK。</li><li>BVE 5 需要 BVE5 目录中的 32 位插件，BVE 6 需要 BVE6 中的 64 位插件。不要混用，退出游戏后再更新插件。</li><li>A 鸣笛；B ATS 确认；X EB 确认；Y ATS 复位。车型档位数量不足时会缩放；京成 3500 的制动显示为角度。</li></ol><aside>连接或重连后实时跟随实体位置。BVE 模式下失联或暂停输出会撤销动力、释放按钮并紧急制动。主手柄与换向器的实机抽查通过，四按钮的线路效果尚未逐项人工验证。<a href="bve_guide.html">详细 BVE 说明</a></aside><h2>5. 软件设置</h2>
 <p>主界面的“接入说明”随游戏模式变化。进入“软件设置”可切换主题、查询 GitHub 发布版本、启用本机接口和配置 LED。</p>
 <ul><li><b>LED 点阵</b>：选择档位后点击 8×8 网格绘制。亮度 0 到 15，旋转可选四个方向，点阵可关闭。点击“保存并应用”后，设置存在此电脑，设备连接时自动应用。旧固件需先更新。</li>
-<li><b>硬件与固件</b>：连接设备后会显示识别结果。配套 C3 点阵版可在此使用随安装包提供的固件。先退出游戏，再确认型号与设备编号，按提示保持 USB 连接。校准留在设备内。</li>
+<li><b>硬件与固件</b>：连接设备后可检查并更新匹配的 hidari1 或 hidari2 固件。软件按设备上报的型号选包。先退出游戏，再确认型号与设备编号，按提示保持 USB 连接。校准留在设备内。</li>
 <li><b>本机 HTTP 接口</b>：默认关闭。在“常规与更新”勾选启用并点击应用。默认读取地址 <code>http://127.0.0.1:8765/v1/state</code>。返回 JSON，<code>connected</code> 表示收到新鲜数据，<code>valid</code> 表示档位有效。<code>notch</code> 为 P1、N、B1、EB 等，<code>reverser</code> 为 F、N 或 R，<code>buttons</code> 的第 0 到 3 位对应 A/B/X/Y。请在 <code>valid=true</code> 时使用档位与按键。</li></ul>
 <h2>遇到问题</h2><table><tr><th>现象</th><th>下一步</th></tr><tr><td>一直等待插入控制器</td><td>换一根数据线或 USB 接口，关闭串口调试工具；同时连接多个开发板时，只保留这台控制器。</td></tr><tr><td>驱动未就绪</td><td>重启电脑。仍失败时，退出 JR Controller 后重新运行本安装包；安装器会尝试检查、修复已有驱动。</td></tr><tr><td>传感器异常或未校准</td><td>未校准时按上面的步骤校准；传感器异常请联系硬件提供者检查磁铁和连接。</td></tr><tr><td>软件有变化，游戏没反应</td><td>核对游戏模式。JR EAST Steam 版开启 Steam Input 并应用 Tsukasa Mascon 官方布局；原生 XInput 直连时保持软件运行后重新启动游戏；RUNNING TRAIN 禁用 Steam Input。保持软件开启后重启游戏。</td></tr><tr><td>更新提示旧程序正在运行</td><td>从任务栏或桌面打开 JR Controller，点击“退出”，再回安装器重试。点击窗口右上角关闭也会退出程序。</td></tr><tr><td>安装失败</td><td>在安装器点击“查看安装日志”，把日志交给提供安装包的人。日志位置：C:\ProgramData\JRController\setup.log。</td></tr></table>
 <h2>以后使用</h2><p>保持软件运行，插上硬件，选择对应游戏模式后启动游戏。无需重复安装或重新校准。卸载从 Windows“已安装的应用”进入；共用的 ViGEmBus 驱动会保留。</p></main></html>

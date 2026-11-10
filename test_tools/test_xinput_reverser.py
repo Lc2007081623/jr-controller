@@ -2,12 +2,14 @@ import unittest
 from xinput_notch_test import Backend,NOTCHES
 
 class FakePad:
-    def __init__(self):self.axes=None;self.updates=0;self.buttons=0
+    def __init__(self):self.axes=None;self.updates=0;self.buttons=0;self.lt=0;self.rt=0
     def left_joystick(self,**kw):self.axes=kw
     def update(self):self.updates+=1
     def reset(self):self.axes=dict(x_value=0,y_value=0);self.buttons=0
     def press_button(self,button):self.buttons |= button
     def release_button(self,button):self.buttons &= ~button
+    def left_trigger(self,value):self.lt=value
+    def right_trigger(self,value):self.rt=value
 
 class AxisTests(unittest.TestCase):
     def backend(self):
@@ -61,6 +63,14 @@ class AxisTests(unittest.TestCase):
         self.assertFalse(app.gate.armed)
         self.assertEqual(app.pad.pad.buttons,0)
         self.assertEqual(app.pad.pad.axes,dict(x_value=0,y_value=0))
+
+    def test_custom_xbox_buttons_and_triggers_reset_with_existing_stop_path(self):
+        b=self.backend();b.set('P3');axes=b.pad.axes.copy()
+        b.set_xbox_buttons(0x0108, 3)
+        self.assertEqual((b.pad.buttons,b.pad.lt,b.pad.rt), (0x0108,255,255))
+        b.set_buttons(0)
+        self.assertEqual((b.pad.buttons,b.pad.lt,b.pad.rt), (0,0,0))
+        self.assertEqual(b.pad.axes,axes)
     def test_close_releases_held_buttons(self):
         b=self.backend();pad=b.pad;b.set_buttons(15);b.close()
         self.assertEqual(pad.buttons,0);self.assertEqual(b.buttons,0)
