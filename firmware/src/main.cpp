@@ -23,7 +23,22 @@ uint8_t buttonMap[4]={1,2,4,8}, buttonPending[4]={}, buttonCaptured=0;
 bool buttonCollecting=false;
 uint32_t inputsChangedAt = 0;
 #ifdef JR_HIDARI_2
+#include "odoriko.h"
+Odoriko odoriko;
 uint32_t inputsAt = 0;
+constexpr uint8_t IN1_CHANNEL = 0, IN2_CHANNEL = 1;
+
+void updateMotorOutput() {
+    static uint8_t lastIn1 = 0, lastIn2 = 0;
+    const uint8_t in1 = odoriko.direction() == 'F' ? odoriko.duty() : 0;
+    const uint8_t in2 = odoriko.direction() == 'R' ? odoriko.duty() : 0;
+    if (lastIn1 && !in1) ledcWrite(IN1_CHANNEL, 0);
+    if (lastIn2 && !in2) ledcWrite(IN2_CHANNEL, 0);
+    if (in1 && in1 != lastIn1) ledcWrite(IN1_CHANNEL, in1);
+    if (in2 && in2 != lastIn2) ledcWrite(IN2_CHANNEL, in2);
+    lastIn1 = in1;
+    lastIn2 = in2;
+}
 
 constexpr uint8_t decodeInputs(uint8_t port) {
     // The protocol mask puts forward/reverse below the four buttons.
@@ -79,7 +94,11 @@ const char *const CAL_NAMESPACE = "jr-m3", *const SOURCE = "ADC";
 Calibration saved{}, pending{};
 uint16_t captured = 0, rawAdc = 0, filtered = 0;
 #ifndef JR_FIRMWARE_VERSION
+#ifdef JR_HIDARI_2
+#define JR_FIRMWARE_VERSION 1.2.4
+#else
 #define JR_FIRMWARE_VERSION 1.1.0
+#endif
 #endif
 #define JR_STRINGIFY_IMPL(value) #value
 #define JR_STRINGIFY(value) JR_STRINGIFY_IMPL(value)
@@ -119,6 +138,42 @@ bool validCalibration(const Calibration &c) {
 void ack(const char *message) {
     Serial.printf("{\"v\":1,\"type\":\"ack\",\"message\":\"%s\"}\n", message);
 }
+
+#ifdef JR_HIDARI_2
+void reportOdorikoRates(bool saved) {
+    const auto &rates = odoriko.rates;
+    Serial.printf("{\"v\":1,\"type\":\"odoriko_config\",\"accel\":%u,\"coast\":%u,\"brake\":%u,\"saved\":%s}\n",
+                  rates.accel, rates.coast, rates.brake, saved ? "true" : "false");
+}
+
+void saveOdorikoRates(const char *payload) {
+    if (!odoriko.pcOutput() && (odoriko.direction() != 'N' || notch != Odoriko::NEUTRAL ||
+                               !inputsValid || inputsRaw < 0 || (inputsRaw & 3) ||
+                               (inputsStable & 3) || !positionValid)) {
+        ack("error_odoriko_neutral");
+        return;
+    }
+    OdorikoRates next;
+    for (auto field : {&next.accel, &next.coast, &next.brake}) {
+        if (*payload < '0' || *payload > '9') { ack("error_odoriko_rates"); return; }
+        char *end = nullptr;
+        const unsigned long value = strtoul(payload, &end, 10);
+        if (value < 1 || value > 255 || (*end != ' ' && *end != '\0')) {
+            ack("error_odoriko_rates"); return;
+        }
+        *field = uint16_t(value);
+        payload = end;
+        while (*payload == ' ') ++payload;
+    }
+    if (*payload) { ack("error_odoriko_rates"); return; }
+    if (!prefs.begin("jr-odoriko", false)) { ack("error_odoriko_save"); return; }
+    const size_t written = prefs.putBytes("rates", &next, sizeof(next));
+    prefs.end();
+    if (written != sizeof(next)) { ack("error_odoriko_save"); return; }
+    odoriko.rates = next;
+    reportOdorikoRates(true);
+}
+#endif
 
 void scanDisplay() {
 #ifdef JR_USE_AS5600
@@ -164,6 +219,14 @@ void configureMatrix(const char *payload) {
 }
 
 void runCommand(char *s) {
+#ifdef JR_HIDARI_2
+    if (!strcmp(s, "ODGET")) { reportOdorikoRates(false); return; }
+    if (!strncmp(s, "ODSET ", 6)) { saveOdorikoRates(s + 6); return; }
+    if (!odoriko.pcOutput() && (!strcmp(s, "BEGIN") || !strcmp(s, "KBEGIN") || !strcmp(s, "RBEGIN"))) {
+        ack("error_calibration_requires_pc_mode");
+        return;
+    }
+#endif
     if (!strncmp(s, "LED ", 4)) { configureMatrix(s + 4); return; }
 #if CONFIG_IDF_TARGET_ESP32C3
     if (s[0]=='K') {
@@ -345,6 +408,24 @@ void sample() {
 }
 
 void setup() {
+#ifdef JR_HIDARI_2
+    pinMode(MOTOR_IN1_PIN, OUTPUT);
+    pinMode(MOTOR_IN2_PIN, OUTPUT);
+    digitalWrite(MOTOR_IN1_PIN, LOW);
+    digitalWrite(MOTOR_IN2_PIN, LOW);
+    ledcSetup(IN1_CHANNEL, 2000, 8);
+    ledcSetup(IN2_CHANNEL, 2000, 8);
+    ledcAttachPin(MOTOR_IN1_PIN, IN1_CHANNEL);
+    ledcAttachPin(MOTOR_IN2_PIN, IN2_CHANNEL);
+    Serial.setTxTimeoutMs(5);
+    if (prefs.begin("jr-odoriko", true)) {
+        OdorikoRates stored;
+        if (prefs.getBytesLength("rates") == sizeof(stored) &&
+            prefs.getBytes("rates", &stored, sizeof(stored)) == sizeof(stored) &&
+            validOdorikoRates(stored)) odoriko.rates = stored;
+        prefs.end();
+    }
+#endif
 #ifndef JR_USE_AS5600
     pinMode(ADC_PIN, INPUT);
 #endif
@@ -437,6 +518,21 @@ void loop() {
     }
 #endif
     if (uint32_t(now-sampleAt) >= 5) { sampleAt = now; sample(); }
+#if CONFIG_IDF_TARGET_ESP32C3
+    char reverser = 'X';
+    if (inputsValid && !reverserCollecting) {
+        for (int i = 0; i < 3; ++i) if ((inputsStable & 3) == reverserMap[i]) reverser = "FNR"[i];
+    }
+#endif
+#ifdef JR_HIDARI_2
+    const bool modelInputsValid = positionValid && !sensorFaultPending && calibrated &&
+                                 !collecting && !reverserCollecting && !buttonCollecting && inputsValid;
+    odoriko.update(now, modelInputsValid ? notch : -1, reverser,
+                   inputsRaw >= 0 && (inputsRaw & 3) == (inputsStable & 3),
+                   inputsValid ? mappedButtons(inputsStable >> 2, buttonMap) : 0);
+    updateMotorOutput();
+    forwardPressed = odoriko.pcOutput() && reverser == 'F';
+#endif
     if (uint32_t(now-reportAt) >= 20) {
         reportAt = now;
         const bool healthy = positionValid && !sensorFaultPending;
@@ -444,25 +540,25 @@ void loop() {
 #if CONFIG_IDF_TARGET_ESP32C3
             && inputsValid && !buttonCollecting
 #endif
-            ;
-#if CONFIG_IDF_TARGET_ESP32C3
-        char reverser = 'X';
-        if (inputsValid && !reverserCollecting) {
-            for (int i = 0; i < 3; ++i) if ((inputsStable & 3) == reverserMap[i]) reverser = "FNR"[i];
-        }
 #ifdef JR_HIDARI_2
-        forwardPressed = reverser == 'F';
+            && odoriko.pcOutput()
 #endif
-#endif
+            ;
         Serial.printf("{\"v\":1,\"type\":\"state\",\"boot\":%lu,\"seq\":%lu,\"ms\":%lu,\"raw\":%u,\"adc\":%u,\"calibrated\":%s,\"notch\":\"%s\",\"forward_pressed\":%s,\"forward_count\":%lu,\"sensor\":\"%s\",\"sensor_ok\":%s,\"board\":\"%s\"",
             (unsigned long)bootId, (unsigned long)sequence++, (unsigned long)now,
             rawAdc, filtered, ready ? "true":"false", ready ? names[notch]:"--",
             forwardPressed ? "true":"false", (unsigned long)forwardCount, SOURCE, healthy ? "true":"false", BOARD_NAME);
 #if CONFIG_IDF_TARGET_ESP32C3
+#ifdef JR_HIDARI_2
+        const uint8_t pcButtons = odoriko.takePcButtons();
+        Serial.printf(",\"reverser\":\"%c\",\"buttons\":%u", odoriko.pcOutput() ? reverser : 'X',
+                      inputsValid && odoriko.pcOutput() ? pcButtons : 0);
+#else
         Serial.printf(",\"reverser\":\"%c\",\"buttons\":%u", reverser,
                       inputsValid ? mappedButtons(inputsStable>>2,buttonMap) : 0);
+#endif
 #ifdef JR_HIDARI_2
-        Serial.printf(",\"inputs_ok\":%s", inputsValid ? "true" : "false");
+        Serial.printf(",\"inputs_ok\":%s,\"mode\":\"%s\"", inputsValid ? "true" : "false", odoriko.mode());
 #endif
 #endif
         Serial.printf(",\"led_config\":true,\"model\":\"%s\",\"firmware\":\"%s\",\"device_id\":\"%s\"}\n",
@@ -471,6 +567,15 @@ void loop() {
     }
     if (uint32_t(now-displayAt) >= 100) {
         displayAt = now;
+#ifdef JR_HIDARI_2
+        const char *label = odoriko.display(modelInputsValid ? notch : -1, reverser, now);
+        const bool displayEnabled = matrixSettings.enabled || !odoriko.pcOutput() || label;
+        writeRegister(0x0c, displayEnabled ? 1 : 0);
+        if (label) {
+            matrixShow(label);
+            return;
+        }
+#endif
         matrixShow(!positionValid ? "--" : (collecting ? "C" : (notch >= 0 ? names[notch] : "--")),
                    positionValid && !collecting ? notch : -1);
     }

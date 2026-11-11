@@ -13,7 +13,7 @@ def main():
         '#include <Arduino.h>\n',encoding='utf-8')
     (TARGET/'controller.cpp').write_text(
         '#define JR_USE_AS5600 1\n'+(ROOT/'src/main.cpp').read_text(encoding='utf-8'),encoding='utf-8')
-    for name in ('board_pins.h','matrix_display.h','as5600_input.h','button_calibration.h','reverser_calibration.h'):
+    for name in ('board_pins.h','matrix_display.h','as5600_input.h','button_calibration.h','reverser_calibration.h','odoriko.h'):
         shutil.copy2(ROOT/'src'/name,TARGET/name)
     print(TARGET)
 

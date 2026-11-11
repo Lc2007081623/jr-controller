@@ -32,6 +32,7 @@ class Sample:
     model: str | None = None
     firmware: str | None = None
     device_id: str | None = None
+    mode: str | None = None
 
 def parse_sample(line):
     if len(line) > 512:
@@ -73,6 +74,9 @@ def parse_sample(line):
     if type(data['buttons']) is not int or not 0 <= data['buttons'] <= 15:
         raise ValueError('invalid buttons')
     data['led_config'] = data.get('led_config') is True
+    data.setdefault('mode', None)
+    if data['mode'] not in (None, 'pc', 'menu', 'odoriko'):
+        raise ValueError('invalid controller mode')
     for key, pattern in [('model', r'[A-Z0-9-]{1,32}'), ('firmware', r'[0-9]+\.[0-9]+\.[0-9]+'),
                          ('device_id', r'[0-9a-f]{12}')]:
         value = data.get(key)
@@ -127,7 +131,9 @@ class DriveGate:
             self.disarm('device restarted; re-arm manually')
         self.sample=sample
         self.received=now
-        if sample.reverser == 'X':
+        if sample.mode in ('menu', 'odoriko'):
+            self.disarm('实体控制器已暂停游戏输出')
+        elif sample.reverser == 'X':
             self.disarm('invalid reverser contacts; re-arm manually')
         elif not sample.sensor_ok:
             self.disarm('sensor invalid; re-arm manually')
@@ -138,6 +144,8 @@ class DriveGate:
     def arm(self,now):
         if self.received is None or now-self.received > self.timeout or not self.sample.calibrated:
             raise ValueError('need fresh calibrated data')
+        if self.sample.mode in ('menu', 'odoriko'):
+            raise ValueError('return to PC mode before enabling XInput')
         if self.sample.notch != 'N':
             raise ValueError('move handle to N before enabling XInput')
         if self.sample.reverser not in (None,'N'):
@@ -159,7 +167,8 @@ class AutoDriveGate(DriveGate):
     def update(self,now,enabled=True):
         self.output(now)
         fresh=self.received is not None and 0 <= now-self.received <= .15
-        if not enabled or not fresh or not self.sample.calibrated or not self.sample.sensor_ok or self.sample.reverser=='X':
+        if (not enabled or not fresh or not self.sample.calibrated or not self.sample.sensor_ok
+                or self.sample.reverser == 'X' or self.sample.mode in ('menu', 'odoriko')):
             self.disarm('等待控制器或完成校准')
         else:
             self.armed=True;self.reason='已连接，实时输出'

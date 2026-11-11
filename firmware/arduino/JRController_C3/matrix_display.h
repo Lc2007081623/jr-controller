@@ -32,6 +32,7 @@ constexpr uint8_t DIGITS[9][5] = {
 
 inline void matrixFrame(const char *text, uint8_t (&rows)[8], int index = -1) {
     memset(rows,0,8);
+    if (!text[0]) return;
     bool brake=text[0]=='B' && text[1]>='1' && text[1]<='8' && text[2]==0;
     bool power=text[0]=='P' && text[1]>='1' && text[1]<='5' && text[2]==0;
     uint8_t columns[5]={};
@@ -45,6 +46,27 @@ inline void matrixFrame(const char *text, uint8_t (&rows)[8], int index = -1) {
         for(uint8_t r=0;r<matrixSettings.rotation;++r) {int previousX=x;x=7-y;y=previousX;}
         rows[y]|=uint8_t(0x80U>>x);
     };
+#ifdef JR_HIDARI_2
+    if (!strcmp(text, "PC") || !strcmp(text, "Od") || !strcmp(text, "Hn") || !strcmp(text, "rn")) {
+        constexpr char letters[] = "PCOdHnr";
+        constexpr uint8_t glyphs[][5] = {
+            {6, 5, 6, 4, 4}, // P
+            {3, 4, 4, 4, 3}, // C
+            {7, 5, 5, 5, 7}, // O
+            {1, 1, 7, 5, 7}, // d
+            {5, 5, 7, 5, 5}, // H
+            {0, 0, 6, 5, 5}, // n
+            {0, 0, 3, 4, 4}, // r
+        };
+        for (int i = 0; i < 2; ++i) {
+            const auto &glyph = glyphs[strchr(letters, text[i]) - letters];
+            for (int y = 0; y < 5; ++y)
+                for (int x = 0; x < 3; ++x)
+                    if (glyph[y] & (4 >> x)) pixel(i * 4 + x, y + 1);
+        }
+        return;
+    }
+#endif
     if(index >= 0 && index < 15 && (matrixSettings.customMask & (1U << index))) {
         for(int y=0;y<8;++y) for(int x=0;x<8;++x)
             if(matrixSettings.patterns[index][y] & (0x80U >> x)) pixel(x,y);

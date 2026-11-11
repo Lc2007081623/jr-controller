@@ -5,6 +5,7 @@
 #ifdef JR_HIDARI_2
 constexpr uint8_t DIN_PIN = 0, CS_PIN = 10, CLK_PIN = 7;
 constexpr uint8_t PCF8574_ADDRESS = 0x20;
+constexpr int MOTOR_IN1_PIN = 4, MOTOR_IN2_PIN = 3; // U9 MODULE_B, MODULE_A
 #else
 constexpr uint8_t DIN_PIN = 4, CS_PIN = 3, CLK_PIN = 2;
 constexpr int FORWARD_PIN = 7, REVERSE_PIN = 1;

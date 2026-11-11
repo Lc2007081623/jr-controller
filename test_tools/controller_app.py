@@ -281,7 +281,7 @@ class App:
         _,_,_,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
         sample=self.gate.sample
         self.notch_text.set(sample.notch if sample else '—')
-        rev=sample.reverser if sample else None
+        rev=sample.reverser if sample and sample.mode not in ('menu', 'odoriko') else None
         self.reverser_text.set({'F':'前进 F','N':'空挡 N','R':'后退 R','X':'异常'}.get(rev,'—'))
         for value,label in self.direction_labels.items():
             label.configure(bg=BLUE if value==rev else TILE,fg='white' if value==rev else MUTED)
@@ -326,6 +326,8 @@ class App:
             except Exception:pass
 
     def disconnect(self):
+        if self.settings_window and self.settings_window.window.winfo_exists():
+            self.settings_window.finish_odoriko('控制器已断开。')
         self.release()
         reader,self.reader=self.reader,None
         if reader:
@@ -396,11 +398,14 @@ class App:
             if owner is not self.reader:continue
             if kind=='sample':
                 if self.gate.receive(value,arrival):self.last_sample_at=arrival
-            elif kind == 'info' and isinstance(value, dict) and value.get('type') == 'ack':
-                if value.get('message') == 'led_config_applied':
-                    self.led_status.set('固件已接收并应用点阵设置')
-                elif value.get('message') == 'error_led_config':
-                    self.led_status.set('设备拒绝点阵设置，请检查固件版本')
+            elif kind == 'info' and isinstance(value, dict):
+                if self.settings_window and self.settings_window.window.winfo_exists():
+                    self.settings_window.odoriko_response(value)
+                if value.get('type') == 'ack':
+                    if value.get('message') == 'led_config_applied':
+                        self.led_status.set('固件已接收并应用点阵设置')
+                    elif value.get('message') == 'error_led_config':
+                        self.led_status.set('设备拒绝点阵设置，请检查固件版本')
             elif kind in ('closed','error'):
                 self.disconnect();self.status.set('控制器已断开，等待重新连接')
         if self.reader and now-self.last_sample_at>3:
@@ -431,6 +436,8 @@ class App:
             if sample:
                 self.live.set(f'{self.reader.port if self.reader else "USB"}  ·  {sample.sensor}  ·  {sample.raw*360/4096:.1f}°' if sample.sensor=='AS5600' else f'位置采样 {sample.adc}')
                 if not sample.sensor_ok:self.status.set('传感器连接异常，请检查磁铁与接线')
+                elif sample.mode == 'odoriko':self.status.set('N 比例模块模式 · 游戏输入已暂停')
+                elif sample.mode == 'menu':self.status.set('控制器正在选择模式 · 游戏输入已暂停')
                 elif not sample.calibrated:self.status.set('请先点击“校准”完成主手柄校准')
                 elif self.pad:self.status.set('控制器输出已就绪' if self.gate.armed else self.gate.reason)
             self.update_keyboard(keys)
@@ -455,7 +462,8 @@ class App:
                 except queue.Full:
                     pass
         if self.state_api:
-            valid = bool(fresh and sample.calibrated and sample.sensor_ok and sample.reverser != 'X')
+            valid = bool(fresh and sample.calibrated and sample.sensor_ok and sample.reverser != 'X'
+                         and sample.mode not in ('menu', 'odoriko'))
             self.state_api.snapshot = dict(OFFLINE, connected=fresh, valid=valid,
                                            notch=sample.notch if valid else None,
                                            reverser=sample.reverser if valid else None,

@@ -54,12 +54,84 @@ class SettingsWindow:
         tabs.add(matrix, text='LED 点阵')
         buttons = ttk.Frame(tabs, padding=18)
         tabs.add(buttons, text='按键映射')
+        odoriko = ttk.Frame(tabs, padding=18)
+        tabs.add(odoriko, text='N 比例模块')
         hardware = ttk.Frame(tabs, padding=18)
         tabs.add(hardware, text='硬件与固件')
         app.updater.add_controls(hardware)
         self.general(general)
         self.matrix(matrix)
         self.buttons(buttons)
+        self.odoriko(odoriko)
+
+    def odoriko(self, parent):
+        ttk.Label(parent, text='Odoriko 速度参数', style='Section.TLabel').pack(anchor='w')
+        ttk.Label(parent, text='数值越大，变化越快。范围 1–255，单位为每秒 PWM 计数。P/B 档再乘档位号。模型模式下请将两柄置 N 后保存。',
+                  wraplength=510, justify='left').pack(anchor='w', pady=(6, 14))
+        self.odoriko_fields = {}
+        for key, label in (('accel', 'P 档加速'), ('coast', 'N 档滑行掉速'), ('brake', 'B 档减速')):
+            row = ttk.Frame(parent)
+            row.pack(fill='x', pady=4)
+            ttk.Label(row, text=label, width=18).pack(side='left')
+            field = self.odoriko_fields[key] = tk.StringVar()
+            ttk.Entry(row, textvariable=field, width=8).pack(side='left')
+        self.odoriko_status = tk.StringVar(value='连接 Hidari 2 后，先读取设备当前参数。')
+        self.odoriko_pending = None
+        actions = ttk.Frame(parent)
+        actions.pack(anchor='w', pady=(16, 8))
+        ttk.Button(actions, text='读取', command=lambda: self.send_odoriko('ODGET')).pack(side='left')
+        ttk.Button(actions, text='保存到控制器', style='Accent.TButton',
+                   command=self.save_odoriko).pack(side='left', padx=8)
+        ttk.Label(parent, textvariable=self.odoriko_status, wraplength=510).pack(anchor='w')
+
+    def save_odoriko(self):
+        try:
+            values = [int(field.get()) for field in self.odoriko_fields.values()]
+            if any(not 1 <= value <= 255 for value in values):
+                raise ValueError
+        except ValueError:
+            self.odoriko_status.set('三项参数都须为 1–255 的整数。')
+            return
+        self.send_odoriko('ODSET ' + ' '.join(map(str, values)))
+
+    def send_odoriko(self, command):
+        sample = self.app.gate.sample
+        if self.odoriko_pending is not None:
+            return
+        if not self.app.reader or not sample or sample.model != 'JR-C3-HIDARI-2':
+            self.odoriko_status.set('请先连接 Hidari 2。')
+            return
+        try:
+            self.app.reader.commands.put_nowait(command)
+        except queue.Full:
+            self.odoriko_status.set('串口忙，请重试。')
+            return
+        self.odoriko_status.set('等待控制器回复…')
+        self.odoriko_pending = self.window.after(
+            2000, lambda: self.finish_odoriko('控制器未应答，请检查连接及固件版本。'))
+
+    def finish_odoriko(self, status):
+        if self.odoriko_pending is not None:
+            self.window.after_cancel(self.odoriko_pending)
+            self.odoriko_pending = None
+            self.odoriko_status.set(status)
+
+    def odoriko_response(self, response):
+        if self.odoriko_pending is None:
+            return
+        if response.get('type') == 'odoriko_config':
+            values = [response.get(key) for key in self.odoriko_fields]
+            if all(type(value) is int and 1 <= value <= 255 for value in values):
+                for field, value in zip(self.odoriko_fields.values(), values):
+                    field.set(str(value))
+                self.finish_odoriko('已保存到控制器。' if response.get('saved') is True else '已读回控制器参数。')
+        elif response.get('type') == 'ack':
+            errors = {'error_odoriko_neutral': '请将主手柄和换向器都置 N，再保存。',
+                      'error_odoriko_rates': '控制器拒绝了参数，请检查数值范围。',
+                      'error_odoriko_save': '控制器保存失败，请重试。'}
+            error = errors.get(response.get('message'))
+            if error:
+                self.finish_odoriko(error)
 
     def buttons(self, parent):
         ttk.Label(parent, text='四个实体按键', style='Section.TLabel').pack(anchor='w')

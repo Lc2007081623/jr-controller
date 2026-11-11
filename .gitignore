@@ -52,3 +52,4 @@ inspect_controller.py
 
 # Local document exports and rendering dependencies
 /.docx-work/
+/output/pdf/

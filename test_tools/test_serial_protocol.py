@@ -1,6 +1,6 @@
 import json
 import unittest
-from serial_protocol import DriveGate, ForwardPressGate, ReverserSwitchGate, parse_sample
+from serial_protocol import AutoDriveGate, DriveGate, ForwardPressGate, ReverserSwitchGate, parse_sample
 
 def frame(**changes):
     data=dict(v=1,type='state',boot=123,seq=1,ms=20,raw=1500,adc=1500,calibrated=True,notch='N')
@@ -17,6 +17,16 @@ class ProtocolTests(unittest.TestCase):
             with self.subTest(data=data),self.assertRaises(ValueError):parse_sample(data)
     def test_ack_is_not_state(self):
         self.assertIsNone(parse_sample('{"v":1,"type":"ack","message":"ready"}'))
+    def test_odoriko_mode_pauses_game_output(self):
+        gate = AutoDriveGate()
+        gate.receive(parse_sample(frame(mode='pc', notch='P3')), 0)
+        self.assertEqual(gate.update(0), 'P3')
+        for seq, mode in enumerate(('menu', 'odoriko'), start=2):
+            sample = parse_sample(frame(seq=seq, mode=mode, notch='P3'))
+            self.assertEqual(sample.mode, mode)
+            gate.receive(sample, .1)
+            self.assertEqual(gate.update(.1), 'N')
+            self.assertFalse(gate.armed)
     def test_as5600_sensor_fault_disarms_and_does_not_rearm(self):
         g=DriveGate();g.receive(parse_sample(frame(sensor='AS5600',sensor_ok=True)),0);g.arm(0)
         fault=parse_sample(frame(seq=2,sensor='AS5600',sensor_ok=False,calibrated=False,notch='--'))
