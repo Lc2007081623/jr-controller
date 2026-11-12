@@ -2,13 +2,16 @@
 #include <stdint.h>
 
 struct OdorikoRates {
-    uint16_t accel = 30, coast = 40, brake = 50;
+    uint16_t accel = 30, coast = 40, brake = 50, minimumCv = 0;
 };
+
+constexpr uint16_t ODORIKO_FULL_SCALE_CV = 1200;
 
 inline bool validOdorikoRates(const OdorikoRates &rates) {
     return rates.accel >= 1 && rates.accel <= 255 &&
            rates.coast >= 1 && rates.coast <= 255 &&
-           rates.brake >= 1 && rates.brake <= 255;
+           rates.brake >= 1 && rates.brake <= 255 &&
+           rates.minimumCv <= ODORIKO_FULL_SCALE_CV;
 }
 
 class Odoriko {
@@ -24,7 +27,13 @@ public:
         return result;
     }
     OdorikoRates rates;
-    uint8_t duty() const { return speed / 1000; }
+    uint8_t duty() const {
+        const int step = speed / 1000;
+        if (!step) return 0;
+        const int floor = (rates.minimumCv * 255 + ODORIKO_FULL_SCALE_CV - 1) / ODORIKO_FULL_SCALE_CV;
+        const int first = floor > 1 ? floor : 1;
+        return first + ((255 - first) * (step - 1) + 127) / 254;
+    }
     char direction() const { return driveDirection; }
 
     const char *display(int notch, char reverser, uint32_t now = 0) const {

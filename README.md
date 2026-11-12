@@ -2,9 +2,9 @@
 
 ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项目，保留第一版电位器方案。
 
-当前桌面版本为 **1.1.4**，详见[版本记录](CHANGELOG.md)。Hidari 2 的 Odoriko 参数可在「软件设置 → N 比例模块」读取和保存。
+当前桌面版本为 **1.1.5**，详见[版本记录](CHANGELOG.md)。Hidari 2 的 Odoriko 参数可在「设定 → 模型驾驶」读取和保存。
 
-[下载安装包（v1.1.4）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.1.4)。[Hidari 2 与 Odoriko 客户说明书](https://github.com/Lc2007081623/jr-controller/releases/download/v1.1.4/Hidari2-Odoriko-User-Manual.pdf)含 LED 点阵速查表。配套的 `SHA256SUMS.txt` 可用于核对发布文件。
+[下载安装包（v1.1.5）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.1.5)。[Hidari 2 与 Odoriko 客户说明书](https://github.com/Lc2007081623/jr-controller/releases/download/v1.1.4/Hidari2-Odoriko-User-Manual.pdf)含 LED 点阵速查表。配套的 `SHA256SUMS.txt` 可用于核对发布文件。
 
 在“软件设置”中可以切换主题、查询 GitHub 更新、映射四个实体按键、编辑点阵并开启本机只读 HTTP 接口。游戏模式右侧提供对应的接入步骤。软件显示所连接的板型、传感器与固件版本，并按设备型号匹配内置的 hidari1 或 hidari2 固件。多型号更新流程已通过软件校验，实机刷写尚待验证。
 
@@ -12,7 +12,7 @@ ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项�
 
 1. 从上方发行页面下载 `JRControllerSetup.exe`，退出旧版 JR Controller 和游戏后运行安装包。Windows 10/11 64 位无需另装 Python；安装器会检查并按需安装手柄驱动。
 2. 安装时可选择 BVE 5、BVE 6 的游戏目录；不使用 BVE 时可以留空。按提示完成安装，需要时重启电脑。
-3. 用数据线连接已烧录、已校准的控制器，打开 JR Controller，选择下表中的游戏模式，然后启动游戏。若未校准，可在程序中打开“设备校准”。
+3. 用数据线连接已烧录、已校准的控制器，打开 JR Controller，进入「模拟驾驶」并选择下表中的游戏模式，然后启动游戏。若未校准，可在程序中打开“设备校准”。
 4. 连接或恢复连接后，游戏输入会跟随实体手柄、换向器和按钮的当前位置。开始驾驶前请确认手柄位置及游戏内显示。
 
 | 游戏 | 程序模式 | 游戏设置与操作 |

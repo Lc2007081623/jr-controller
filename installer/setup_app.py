@@ -15,7 +15,7 @@ from tkinter import ttk, filedialog
 import winreg
 
 APP_NAME='JR Controller'
-VERSION='1.1.4'
+VERSION='1.1.5'
 UNINSTALL_KEY=r'Software\Microsoft\Windows\CurrentVersion\Uninstall\JRController'
 RUN_KEY=r'Software\Microsoft\Windows\CurrentVersion\Run'
 

@@ -33,6 +33,7 @@ class Sample:
     firmware: str | None = None
     device_id: str | None = None
     mode: str | None = None
+    model_duty: int | None = None
 
 def parse_sample(line):
     if len(line) > 512:
@@ -77,6 +78,10 @@ def parse_sample(line):
     data.setdefault('mode', None)
     if data['mode'] not in (None, 'pc', 'menu', 'odoriko'):
         raise ValueError('invalid controller mode')
+    data.setdefault('model_duty', None)
+    duty = data['model_duty']
+    if duty is not None and (type(duty) is not int or not 0 <= duty <= 255):
+        raise ValueError('invalid model output duty')
     for key, pattern in [('model', r'[A-Z0-9-]{1,32}'), ('firmware', r'[0-9]+\.[0-9]+\.[0-9]+'),
                          ('device_id', r'[0-9a-f]{12}')]:
         value = data.get(key)

@@ -10,20 +10,23 @@ import time
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
-from serial_protocol import AutoDriveGate
+from serial_protocol import AutoDriveGate, NOTCH_ORDER
 from button_mapping import KeyboardOutput, button_mapping, mapped_outputs
 from serial_notch_bridge import Reader, App as CalibrationApp
 from output_profiles import MODES,XBOX,ZUIKI,BVE,TRAIN_CREW,load_mode,save_mode,create_backend,load_settings,save_settings
-from ui_theme import apply_theme,button_strip,update_buttons
-from settings_ui import THEMES, DEFAULT_PORT, SettingsWindow, led_settings, led_command
+from ui_theme import FONT, SlidingReadout, apply_theme, blend, button_strip, style_window, update_buttons
+from settings_ui import THEMES, DEFAULT_THEME, DEFAULT_PORT, SettingsWindow, led_settings, led_command
 from local_state_api import LocalStateAPI, OFFLINE
-from update_check import VERSION
 from hardware_update import HardwareUpdater, hardware_name, hardware_details
 from game_guides import GUIDES
+from model_drive import ModelDashboard
+from mascon_view import HandleTravel, MasconView
 
 TITLE='JR 控制器'
 JR_STEAM_URI = 'steam://rungameid/2111630'
 JR_GAME_EXE = 'JREAST_TrainSimulator.exe'
+NOTCH_RANK = {notch: index for index, notch in enumerate(NOTCH_ORDER)}
+REVERSER_RANK = {'R': 0, 'N': 1, 'F': 2}
 
 def controller_ports(ports):
     return [p.device for p in ports if (p.vid,p.pid)==(0x303a,0x1001)]
@@ -47,7 +50,9 @@ class App:
         self.keyboard = KeyboardOutput()
         self.mapping_held = 0
         theme = prefs.get('theme')
-        self.theme = theme if isinstance(theme, str) and theme in THEMES else '绿色'
+        self.theme = theme if isinstance(theme, str) and theme in THEMES else DEFAULT_THEME
+        self.details_visible = False
+        self.handle_travel = HandleTravel()
         self.settings_window = None
         self.state_api = None
         self.api_enabled = prefs.get('api_enabled') is True
@@ -61,14 +66,14 @@ class App:
         self.updater = HardwareUpdater(self)
         self.status=tk.StringVar(value='正在连接控制器…')
         self.live=tk.StringVar(value='插入 USB 后自动连接')
-        self.notch_text=tk.StringVar(value='—');self.reverser_text=tk.StringVar(value='—')
         self.mode=tk.StringVar(value=self.output_mode)
         self.mode_hint=tk.StringVar()
         self.jr_pending = None
         self.jr_button_text = tk.StringVar(value='启动 JR EAST')
-        root.title(TITLE);root.geometry('820x780');root.minsize(765,780)
-        self.dashboard = ttk.Frame(root)
-        self.dashboard.pack(fill='both',expand=True)
+        root.title(TITLE);root.geometry('790x408');root.minsize(760,408)
+        self.page = '首页'
+        self.shell = ttk.Frame(root)
+        self.shell.pack(fill='both',expand=True)
         self.set_theme(self.theme)
         if self.api_enabled:
             try:
@@ -80,73 +85,170 @@ class App:
     def set_theme(self, theme):
         self.theme = theme
         apply_theme(self.root, THEMES[theme])
-        for child in self.dashboard.winfo_children():
+        for child in self.shell.winfo_children():
             child.destroy()
-        self.build_dashboard()
+        palette = THEMES[theme]
+        bg, card, ink, _, _, _, _, _, _ = palette
+        header = tk.Frame(self.shell, bg=bg, padx=22, pady=9)
+        header.pack(fill='x')
+        self.back_button = ttk.Button(header, text='返回首页', style='Panel.TButton',
+                                      command=lambda: self.show_page('首页'))
+        self.page_title = tk.Label(header, bg=bg, fg=ink, pady=4, font=(FONT, 15, 'bold'))
+        self.page_title.pack(side='left')
+        self.output_badge = tk.Label(header, bg=bg, padx=0, font=(FONT, 10))
+        self.usb_badge = tk.Label(header, bg=bg, padx=0, font=(FONT, 10))
+        self.usb_badge.pack(side='right')
+        tk.Frame(self.shell, bg=blend(card, ink, .10), height=1).pack(fill='x', padx=22)
+        self.model_dashboard = ModelDashboard(self.shell, palette, lambda: self.open_settings('模型驾驶'))
+        self.pages = {
+            '首页': self.build_home(),
+            '模拟驾驶': self.build_dashboard(),
+            '模型驾驶': self.model_dashboard,
+            '使用说明': self.build_usage(),
+        }
+        self.show_page(self.page)
+
+    def show_page(self, name):
+        self.pages[self.page].pack_forget()
+        self.page = name
+        self.page_title.configure(text=TITLE if name == '首页' else name)
+        if name == '首页':
+            self.back_button.pack_forget()
+        else:
+            self.back_button.pack(side='left', before=self.page_title, padx=(0, 12))
+        if name == '模拟驾驶':
+            self.output_badge.pack(side='right', before=self.usb_badge, padx=(16, 0))
+        else:
+            self.output_badge.pack_forget()
+        self.pages[name].pack(fill='both', expand=True)
+        self.render()
+
+    def build_home(self):
+        home = ttk.Frame(self.shell, padding=(16, 0, 16, 12))
+        home.columnconfigure((0, 1, 2, 3), weight=1, uniform='home')
+        home.rowconfigure(0, weight=1)
+        home.rowconfigure(3, weight=1)
+        for column, (title, hint, command) in enumerate((
+            ('模拟驾驶', '连接电脑游戏', lambda: self.show_page('模拟驾驶')),
+            ('模型驾驶', '查看当前输出电压', lambda: self.show_page('模型驾驶')),
+            ('设定', '调整软件和控制器', self.open_settings),
+            ('使用说明', '第一次使用', lambda: self.show_page('使用说明')),
+        )):
+            ttk.Button(home, text=title, command=command, style='Home.TButton').grid(
+                row=1, column=column, sticky='ew', padx=6)
+            ttk.Label(home, text=hint, style='Muted.TLabel', anchor='center').grid(
+                row=2, column=column, sticky='ew', pady=(10, 0))
+        return home
+
+    def build_usage(self):
+        body = ttk.Frame(self.shell, padding=(20, 16))
+        body.columnconfigure((0, 1), weight=1, uniform='help')
+        sections = (
+            ('用控制器玩电脑游戏', (
+                '连接控制器，进入「模拟驾驶」，选你要玩的游戏。',
+                '等右上角显示「游戏输入就绪」，再启动游戏。第一次玩，先看游戏旁边的「接入说明」。',
+                '停车时拨动手柄，看看软件和游戏里的档位是否跟着变。游戏没反应时，保持软件开启，再重开游戏。',
+            )),
+            ('驾驶模型列车', (
+                '进入「模型驾驶」。把主手柄和换向器都放到 N，同时按住 A 和 Y 约一秒。',
+                '松开后按 A 或 B 选到 Od，再按 X 确认。把换向器拨到 F 或 R，用 P 档加速、N 档滑行、B 档减速。',
+                '需要切断动力时拨到 EB。等小车停稳再换方向。回电脑游戏时，两柄回 N，用同样的方法选 PC。',
+            )),
+        )
+        for column, (title, steps) in enumerate(sections):
+            section = ttk.Frame(body, padding=(12, 12), style='Card.TFrame')
+            section.grid(row=0, column=column, sticky='nsew', padx=4)
+            ttk.Label(section, text=title, style='CardSection.TLabel').grid(
+                row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+            for number, step in enumerate(steps, 1):
+                ttk.Label(section, text=f'{number}.', style='Card.TLabel').grid(
+                    row=number, column=0, sticky='nw', padx=(0, 6), pady=(0, 8))
+                ttk.Label(section, text=step, wraplength=302, justify='left', style='Card.TLabel').grid(
+                    row=number, column=1, sticky='nw', pady=(0, 8))
+        ttk.Label(body, text='小车低速时不动？打开「设定 → 模型驾驶」，先读取，再稍微调高最低输出电压。',
+                  style='Muted.TLabel', wraplength=680, justify='left').grid(
+                      row=1, column=0, columnspan=2, sticky='w', padx=12, pady=(8, 0))
+        return body
 
     def build_dashboard(self):
-        root = self.dashboard
-        BG,CARD,INK,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
-        header=tk.Frame(root,bg='#13283A',padx=28,pady=12);header.pack(fill='x')
-        tk.Label(header,text='JR / CONTROLLER',bg='#13283A',fg='white',font=('Segoe UI',23,'bold')).pack(side='left')
-        tk.Label(header,text=f'CONTROL DESK  /  {VERSION}',bg='#13283A',fg='#9DB1CD',font=('Segoe UI',9)).pack(side='right',anchor='s',pady=7)
-        tk.Frame(root,bg=GREEN,height=3).pack(fill='x')
-        body=ttk.Frame(root,padding=(26,14));body.pack(fill='both',expand=True)
+        BG,CARD,INK,MUTED,_,TILE,_,_,_ = THEMES[self.theme]
+        body=ttk.Frame(self.shell,padding=(22,18))
         games=ttk.Frame(body);games.pack(fill='x',pady=(0,10))
-        ttk.Label(games,text='游戏模式').pack(side='left',padx=(0,12))
+        ttk.Label(games,text='游戏模式',style='Section.TLabel').pack(side='left',padx=(0,12))
         self.mode_box=ttk.Combobox(games,textvariable=self.mode,values=MODES,state='readonly',width=28)
-        self.mode_box.pack(side='left',fill='x',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
-        ttk.Button(games,text='接入说明',command=self.open_mode_guide).pack(side='left',padx=(10,0))
+        self.mode_box.pack(side='left',fill='both',expand=True);self.mode_box.bind('<<ComboboxSelected>>',self.change_mode)
         self.jr_controls = ttk.Frame(games)
-        ttk.Button(self.jr_controls,textvariable=self.jr_button_text,command=self.request_jr_launch).pack(side='left',padx=(10,0))
-        ttk.Button(self.jr_controls,text='启动设置',command=self.choose_jr_entry).pack(side='left',padx=(10,0))
+        ttk.Button(self.jr_controls,textvariable=self.jr_button_text,command=self.request_jr_launch,
+                   style='PanelAccent.TButton').pack(side='left',padx=(8,0))
+        ttk.Button(self.jr_controls,text='启动设置',command=self.choose_jr_entry,
+                   style='Panel.TButton').pack(side='left',padx=(8,0))
+        guide = ttk.Button(games,text='接入说明',command=self.open_mode_guide,style='Panel.TButton')
+        guide.pack(side='right',padx=(8,0))
         self.update_mode_hint()
-        ttk.Label(body,textvariable=self.mode_hint,style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(0,10))
-        status_card = tk.Frame(body, bg=CARD, padx=20, pady=12)
-        status_card.pack(fill='x', pady=(0, 14))
-        heading = tk.Frame(status_card, bg=CARD)
-        heading.pack(fill='x')
-        tk.Label(heading, textvariable=self.hardware_name, bg=CARD, fg=INK,
-                 font=('Microsoft YaHei UI', 24, 'bold')).pack(side='left', anchor='w')
-        self.badge = tk.Label(heading, text='● 等待连接', bg=TILE, fg=MUTED,
-                              font=('Microsoft YaHei UI', 12, 'bold'), padx=12, pady=5)
-        self.badge.pack(side='right', anchor='center')
-        tk.Label(status_card, textvariable=self.status, bg=CARD, fg=INK,
-                 font=('Microsoft YaHei UI', 16, 'bold'), wraplength=650,
-                 anchor='w', justify='left').pack(anchor='w', pady=(2, 7))
-        details = tk.Frame(status_card, bg=TILE, padx=12, pady=7)
-        details.pack(fill='x')
-        for variable in (self.live, self.hardware_text):
-            tk.Label(details, textvariable=variable, bg=TILE, fg=INK,
-                     font=('Microsoft YaHei UI', 13), anchor='w').pack(anchor='w')
-        metrics=tk.Frame(body,bg=BG);metrics.pack(fill='x',pady=(0,10))
-        metrics.columnconfigure((0,1),weight=1,uniform='metric')
-        main=tk.Frame(metrics,bg=CARD,padx=22,pady=12);main.grid(row=0,column=0,sticky='nsew',padx=(0,7))
-        tk.Label(main,text='01  /  主手柄',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
-        self.notch_label=tk.Label(main,textvariable=self.notch_text,bg=CARD,fg=BLUE,font=('Segoe UI',57,'bold'));self.notch_label.pack(anchor='w')
-        tk.Label(main,text='牵引  /  空挡  /  制动',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',9)).pack(anchor='w')
-        direction=tk.Frame(metrics,bg=CARD,padx=22,pady=12);direction.grid(row=0,column=1,sticky='nsew',padx=(7,0))
-        tk.Label(direction,text='02  /  换向器',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w')
-        tk.Label(direction,textvariable=self.reverser_text,bg=CARD,fg=INK,font=('Microsoft YaHei UI',23,'bold'),pady=14).pack(anchor='w')
-        selector=tk.Frame(direction,bg=CARD);selector.pack(anchor='w',pady=(0,6));self.direction_labels={}
-        for value in ('F','N','R'):
-            label=tk.Label(selector,text=value,bg=TILE,fg=MUTED,font=('Segoe UI',11,'bold'),width=4,pady=5)
-            label.pack(side='left',padx=(0,6));self.direction_labels[value]=label
-        buttons=tk.Frame(body,bg=CARD,padx=14,pady=12);buttons.pack(fill='x',pady=(0,12))
-        tk.Label(buttons,text='03  /  实体按键',bg=CARD,fg=MUTED,font=('Microsoft YaHei UI',10)).pack(anchor='w',padx=6,pady=(0,8))
-        strip,self.key_labels=button_strip(buttons);strip.pack(anchor='w')
-        row=ttk.Frame(body);row.pack(fill='x')
-        ttk.Button(row,text='设备校准',style='Accent.TButton',command=self.calibrate).pack(side='left')
-        ttk.Button(row,text='软件设置',command=self.open_settings).pack(side='left',padx=10)
-        ttk.Button(row,text='使用说明',command=self.open_guide).pack(side='left')
-        ttk.Button(row,text='退出',command=self.close).pack(side='right')
-        ttk.Label(body,text='校准保存在控制器中  ·  USB 自动连接  ·  实时跟随当前位置',style='Muted.TLabel',wraplength=700).pack(anchor='w',pady=(10,0))
+        self.status_label = tk.Label(body, textvariable=self.status, bg=BG, fg=MUTED, wraplength=700,
+                                     anchor='w', justify='left', font=(FONT, 10))
+        self.status_label.pack(fill='x',pady=(0,14))
 
-    def open_settings(self):
+        divider = blend(CARD, INK, .10)
+        metrics=tk.Frame(body,bg=CARD,highlightbackground=divider,highlightthickness=1)
+        metrics.pack(fill='x')
+        metrics.columnconfigure((0,2,4),weight=1)
+        for column in (1,3):
+            tk.Frame(metrics,bg=divider,width=1).grid(row=0,column=column,sticky='ns',pady=14)
+        main=tk.Frame(metrics,bg=CARD,padx=20,pady=14)
+        main.grid(row=0,column=0,sticky='nsew')
+        tk.Label(main,text='主手柄档位',bg=CARD,fg=MUTED,font=(FONT,10)).pack(anchor='w')
+        handle = tk.Frame(main, bg=TILE)
+        handle.pack(fill='x', pady=(9, 0))
+        self.mascon = MasconView(handle, TILE)
+        self.mascon.pack(side='left')
+        self.notch_readout = SlidingReadout(handle, TILE, (FONT, 42, 'bold'), '000')
+        self.notch_readout.pack(side='left', fill='x', expand=True)
+        direction=tk.Frame(metrics,bg=CARD,padx=20,pady=14)
+        direction.grid(row=0,column=2,sticky='nsew')
+        tk.Label(direction,text='换向器',bg=CARD,fg=MUTED,font=(FONT,10)).pack(anchor='w')
+        selector=tk.Frame(direction,bg=CARD);selector.pack(anchor='w',pady=(9,4));self.direction_labels={}
+        for value in ('F','N','R'):
+            label=tk.Label(selector,text=value,bg=TILE,fg=MUTED,font=(FONT,14,'bold'),width=3,pady=7)
+            label.pack(side='left',padx=(0,5));self.direction_labels[value]=label
+        self.reverser_readout = SlidingReadout(direction, CARD, (FONT, 12, 'bold'), '前进')
+        self.reverser_readout.pack(anchor='w')
+        buttons=tk.Frame(metrics,bg=CARD,padx=20,pady=14)
+        buttons.grid(row=0,column=4,sticky='nsew')
+        tk.Label(buttons,text='实体按键',bg=CARD,fg=MUTED,font=(FONT,10)).pack(anchor='w')
+        strip,self.key_labels=button_strip(buttons,width=3);strip.pack(anchor='w',pady=(9,0))
+
+        row=ttk.Frame(body);row.pack(fill='x',pady=(14,0))
+        ttk.Label(row,textvariable=self.hardware_name,style='Muted.TLabel').pack(side='left')
+        self.details_button = ttk.Button(row,command=self.toggle_details,style='Panel.TButton')
+        self.details_button.pack(side='left',padx=8)
+        for label, command in (('退出', self.close), ('软件设置', self.open_settings),
+                               ('设备校准', self.calibrate)):
+            ttk.Button(row,text=label,command=command,style='Panel.TButton').pack(side='right',padx=(8,0))
+        self.details = ttk.Frame(body)
+        for variable in (self.live, self.hardware_text):
+            ttk.Label(self.details,textvariable=variable,style='Muted.TLabel').pack(anchor='w')
+        self.show_details()
+        return body
+
+    def toggle_details(self):
+        self.details_visible = not self.details_visible
+        self.show_details()
+
+    def show_details(self):
+        self.details_button.configure(text='收起详情' if self.details_visible else '设备详情')
+        if self.details_visible:
+            self.details.pack(fill='x',pady=(8,0))
+        else:
+            self.details.pack_forget()
+
+    def open_settings(self, section=None):
         if self.settings_window and self.settings_window.window.winfo_exists():
             self.settings_window.window.lift()
         else:
             self.settings_window = SettingsWindow(self)
+        if section:
+            self.settings_window.select(section)
 
     def save_preferences(self, **changes):
         try:
@@ -177,10 +279,12 @@ class App:
         window = tk.Toplevel(self.root)
         window.title(self.output_mode + ' · 接入说明')
         window.geometry('670x500')
-        window.configure(bg=THEMES[self.theme][0])
+        style_window(window, THEMES[self.theme][0])
         body = ttk.Frame(window,padding=24)
         body.pack(fill='both',expand=True)
         ttk.Label(body,text=self.output_mode,style='Title.TLabel').pack(anchor='w',pady=(0,16))
+        ttk.Label(body,text=self.mode_hint.get(),style='Muted.TLabel',wraplength=600,
+                  justify='left').pack(anchor='w',pady=(0,12))
         for index, step in enumerate(GUIDES[self.output_mode], 1):
             ttk.Label(body,text=f'{index:02}  {step}',wraplength=600,
                       justify='left').pack(anchor='w',pady=(0,10))
@@ -278,22 +382,42 @@ class App:
             messagebox.showerror('启动 JR EAST', f'启动失败，请检查启动设置：{exc}', parent=self.root)
 
     def render(self):
-        _,_,_,MUTED,BLUE,TILE,GREEN,AMBER,RED = THEMES[self.theme]
+        _,_,INK,MUTED,ACCENT,TILE,GREEN,AMBER,RED = THEMES[self.theme]
         sample=self.gate.sample
-        self.notch_text.set(sample.notch if sample else '—')
+        notch = sample.notch if sample else '—'
         rev=sample.reverser if sample and sample.mode not in ('menu', 'odoriko') else None
-        self.reverser_text.set({'F':'前进 F','N':'空挡 N','R':'后退 R','X':'异常'}.get(rev,'—'))
+        animate = self.page == '模拟驾驶'
+        self.reverser_readout.show({'F':'前进','N':'空挡','R':'后退','X':'异常'}.get(rev,'—'),
+                                   INK, REVERSER_RANK.get(rev), animate)
         for value,label in self.direction_labels.items():
-            label.configure(bg=BLUE if value==rev else TILE,fg='white' if value==rev else MUTED)
-        color=RED if sample and sample.notch.startswith(('B','E')) else GREEN if sample and sample.notch.startswith('P') else BLUE
-        self.notch_label.configure(fg=color)
+            label.configure(bg=ACCENT if value==rev else TILE,fg='#F4FAF7' if value==rev else MUTED)
+        color = INK
+        if notch == 'EB':
+            color = RED
+        elif notch.startswith('B'):
+            color = AMBER
+        elif notch.startswith('P'):
+            color = GREEN
+        self.notch_readout.show(notch, color, NOTCH_RANK.get(notch), animate)
+        if animate:
+            now = time.monotonic()
+            fresh = self.gate.received is not None and 0 <= now - self.gate.received <= .15
+            self.mascon.show(self.handle_travel.angle(self.reader, sample if fresh else None, now))
         update_buttons(self.key_labels,sample.buttons if sample else 0)
-        if self.calibration:text,fg,bg='● 校准中',BLUE,TILE
-        elif self.gate.armed:text,fg,bg='● 已就绪',GREEN,TILE
-        elif not self.pad:text,fg,bg='● 等待驱动',RED,TILE
-        elif self.reader:text,fg,bg='● 待就绪',AMBER,TILE
-        else:text,fg,bg='● 等待连接',MUTED,TILE
-        self.badge.configure(text=text,fg=fg,bg=bg)
+        usb_state = 'USB 已连接' if sample else 'USB 正在连接' if self.reader else 'USB 未连接'
+        self.usb_badge.configure(text='●  ' + usb_state,fg=GREEN if sample else MUTED)
+        if self.calibration:
+            output, indicator = '校准中', AMBER
+        elif self.gate.armed:
+            output, indicator = '游戏输入就绪', GREEN
+        elif sample:
+            output, indicator = '游戏输入暂停', AMBER
+        else:
+            output, indicator = '游戏输入待命', MUTED
+        self.output_badge.configure(text='●  ' + output,fg=indicator)
+        if self.page == '模型驾驶':
+            fresh = self.gate.received is not None and 0 <= time.monotonic() - self.gate.received <= .15
+            self.model_dashboard.update_reading(sample if fresh else None)
 
     def apply_button_mapping(self, mapping):
         if not self.save_preferences(button_mapping=mapping):
@@ -327,7 +451,7 @@ class App:
 
     def disconnect(self):
         if self.settings_window and self.settings_window.window.winfo_exists():
-            self.settings_window.finish_odoriko('控制器已断开。')
+            self.settings_window.disconnect_odoriko()
         self.release()
         reader,self.reader=self.reader,None
         if reader:
@@ -399,6 +523,8 @@ class App:
             if kind=='sample':
                 if self.gate.receive(value,arrival):self.last_sample_at=arrival
             elif kind == 'info' and isinstance(value, dict):
+                if value.get('type') == 'center':
+                    self.handle_travel.read_center(owner, value)
                 if self.settings_window and self.settings_window.window.winfo_exists():
                     self.settings_window.odoriko_response(value)
                 if value.get('type') == 'ack':
@@ -439,7 +565,7 @@ class App:
                 elif sample.mode == 'odoriko':self.status.set('N 比例模块模式 · 游戏输入已暂停')
                 elif sample.mode == 'menu':self.status.set('控制器正在选择模式 · 游戏输入已暂停')
                 elif not sample.calibrated:self.status.set('请先点击“校准”完成主手柄校准')
-                elif self.pad:self.status.set('控制器输出已就绪' if self.gate.armed else self.gate.reason)
+                elif self.pad:self.status.set(self.mode_hint.get() if self.gate.armed else self.gate.reason)
             self.update_keyboard(keys)
             self.launch_jr_if_ready()
         self.publish_state(now)

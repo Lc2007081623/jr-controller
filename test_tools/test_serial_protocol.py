@@ -1,6 +1,10 @@
 import json
+import queue
 import unittest
-from serial_protocol import AutoDriveGate, DriveGate, ForwardPressGate, ReverserSwitchGate, parse_sample
+from types import SimpleNamespace
+from serial_protocol import AutoDriveGate, DriveGate, ForwardPressGate, NOTCH_ORDER, ReverserSwitchGate, parse_sample
+from mascon_view import HandleTravel
+from model_drive import model_reading
 
 def frame(**changes):
     data=dict(v=1,type='state',boot=123,seq=1,ms=20,raw=1500,adc=1500,calibrated=True,notch='N')
@@ -27,6 +31,16 @@ class ProtocolTests(unittest.TestCase):
             gate.receive(sample, .1)
             self.assertEqual(gate.update(.1), 'N')
             self.assertFalse(gate.armed)
+    def test_model_telemetry_is_optional_and_reports_post_limit_output(self):
+        model = dict(model='JR-C3-HIDARI-2', mode='odoriko')
+        self.assertIsNone(model_reading(parse_sample(frame(**model)))[0])
+        for duty in (0, 128, 255):
+            sample = parse_sample(frame(**model, model_duty=duty))
+            self.assertAlmostEqual(model_reading(sample)[0], duty * 12 / 255)
+        self.assertIsNone(model_reading(parse_sample(frame(model=model['model'], mode='pc', model_duty=0)))[0])
+        for invalid in (-1, 256, True, '128'):
+            with self.subTest(duty=invalid), self.assertRaises(ValueError):
+                parse_sample(frame(**model, model_duty=invalid))
     def test_as5600_sensor_fault_disarms_and_does_not_rearm(self):
         g=DriveGate();g.receive(parse_sample(frame(sensor='AS5600',sensor_ok=True)),0);g.arm(0)
         fault=parse_sample(frame(seq=2,sensor='AS5600',sensor_ok=False,calibrated=False,notch='--'))
@@ -80,6 +94,42 @@ class ProtocolTests(unittest.TestCase):
         gate.receive(parse_sample(frame(seq=2,notch='P5')),.1)
         self.assertEqual(gate.output(1),'N')
         self.assertFalse(gate.armed)
+
+
+class HandleTravelTests(unittest.TestCase):
+    def test_uses_calibrated_angle_in_both_mounting_directions(self):
+        for direction in (1, -1):
+            with self.subTest(direction=direction):
+                travel = HandleTravel()
+                reader = SimpleNamespace(commands=queue.Queue())
+                def sample(adc, notch='N'):
+                    return parse_sample(frame(sensor='AS5600', adc=adc, notch=notch))
+                self.assertIsNone(travel.angle(reader, sample(2000), 0))
+                self.assertEqual(reader.commands.get_nowait(), 'DUMP')
+                centers = [2000 + direction * (index - 9) * 50 for index in range(15)]
+                for name, adc in zip(NOTCH_ORDER, centers):
+                    travel.read_center(reader, {'notch': name, 'adc': adc})
+                angles = [travel.angle(reader, sample(adc, name), .1) for name, adc in zip(NOTCH_ORDER, centers)]
+                self.assertEqual(angles, sorted(set(angles), reverse=True))
+                self.assertEqual(angles[9], 0)
+                self.assertEqual(travel.angle(reader, sample(2000 + direction * 5), .2), 0)
+                self.assertLess(travel.angle(reader, sample(centers[10] + direction * 5, 'P1'), .2),
+                                angles[10])
+                self.assertIsNone(travel.angle(reader, None, .3))
+                self.assertIsNone(travel.angle(reader, parse_sample(frame(sensor='AS5600', boot=124)), .4))
+                self.assertEqual(reader.commands.get_nowait(), 'DUMP')
+
+    def test_partial_dump_is_retried_without_using_an_angle(self):
+        travel = HandleTravel()
+        reader = SimpleNamespace(commands=queue.Queue())
+        sample = parse_sample(frame(sensor='AS5600'))
+        self.assertIsNone(travel.angle(reader, sample, 0))
+        travel.read_center(reader, {'notch': 'EB', 'adc': 1400})
+        travel.read_center(reader, {'notch': 'B8', 'adc': True})
+        self.assertIsNone(travel.angle(reader, sample, .5))
+        self.assertEqual(reader.commands.qsize(), 1)
+        self.assertIsNone(travel.angle(reader, sample, 1))
+        self.assertEqual(reader.commands.qsize(), 2)
 
 class SwitchTests(unittest.TestCase):
     def sample(self,position='N',**changes):

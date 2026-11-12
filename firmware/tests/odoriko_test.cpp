@@ -103,6 +103,11 @@ int main() {
     assert(remapped.duty() == 4);
     remapped.update(1520, n - 1, 'F', true, 0);
     assert(remapped.duty() == 3);
+    remapped.rates.minimumCv = 240;
+    assert(remapped.duty() >= 51 && remapped.duty() < 255);
+    remapped.update(1540, 0, 'F', true, 0);
+    assert(remapped.duty() == 0);
+    remapped.update(1550, n, 'F', true, 0);
     remapped.update(1560, n + 5, 'F', true, mappedButtons(2, calibratedMap));
     remapped.update(1660, n + 5, 'F', true, mappedButtons(2, calibratedMap));
     assert(remapped.duty() == 0);

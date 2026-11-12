@@ -6,7 +6,7 @@ import time
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from ui_theme import apply_theme,button_strip,update_buttons,INK
+from ui_theme import FONT, apply_theme, button_strip, update_buttons
 from serial_protocol import DriveGate, ForwardPressGate, ReverserSwitchGate, NOTCH_ORDER, parse_sample,button_assignments
 
 class Reader(threading.Thread):
@@ -68,7 +68,7 @@ class App:
         self.current_capture={};self.bad_lines=0;self.centers={}
         self.reverser_calibrating=False;self.buttons_calibrating=False
         self.reverser_config_requested=False;self.button_captures={}
-        apply_theme(root);root.title('JR 控制器 · 校准中心');root.geometry('960x820')
+        apply_theme(root);root.title('JR 控制器 · 校准中心');root.geometry('900x750')
         self.status=tk.StringVar(value='连接控制器后开始校准')
         self.live=tk.StringVar(value='等待控制器数据')
         self.port=tk.StringVar();self.target=tk.StringVar(value='EB')
@@ -87,13 +87,13 @@ class App:
         ttk.Button(top,text='刷新',command=self.refresh_ports).pack(side='left',padx=4)
         ttk.Button(top,text='断开',command=self.disconnect).pack(side='left',padx=4)
         ttk.Label(body,textvariable=self.status,style='Muted.TLabel',wraplength=880).pack(anchor='w')
-        ttk.Label(body,textvariable=self.live,font=('Microsoft YaHei UI',12)).pack(anchor='w',pady=(8,14))
+        ttk.Label(body,textvariable=self.live,font=(FONT,11)).pack(anchor='w',pady=(8,14))
         tabs=ttk.Notebook(body);tabs.pack(fill='both',expand=True)
         handle=ttk.Frame(tabs,padding=20,style='Card.TFrame');tabs.add(handle,text='主手柄')
         direction=ttk.Frame(tabs,padding=20,style='Card.TFrame');tabs.add(direction,text='换向器')
         keys=ttk.Frame(tabs,padding=20,style='Card.TFrame');tabs.add(keys,text='按钮')
         logs=ttk.Frame(tabs,padding=16,style='Card.TFrame');tabs.add(logs,text='诊断日志')
-        ttk.Label(handle,text='01  采集机械卡位',font=('Microsoft YaHei UI',15,'bold'),style='Card.TLabel').pack(anchor='w')
+        ttk.Label(handle,text='01  采集机械卡位',style='CardSection.TLabel').pack(anchor='w')
         ttk.Label(handle,text='EB → B8…B1 → N → P1…P5',style='Card.TLabel').pack(anchor='w',pady=(5,14))
         row=ttk.Frame(handle,style='Card.TFrame');row.pack(fill='x',pady=5)
         ttk.Button(row,text='开始',command=self.begin).pack(side='left',padx=(0,8))
@@ -107,7 +107,7 @@ class App:
             self.table.heading(col,text=name);self.table.column(col,width=220,anchor='center')
         for name in NOTCH_ORDER:self.table.insert('','end',iid=name,values=(name,'—','—'))
         self.table.pack(fill='both',expand=True)
-        ttk.Label(direction,text='02  学习三档换向开关',font=('Microsoft YaHei UI',15,'bold'),style='Card.TLabel').pack(anchor='w')
+        ttk.Label(direction,text='02  学习三档换向开关',style='CardSection.TLabel').pack(anchor='w')
         ttk.Label(direction,text='拨到目标方向，停稳后点击采集；中间位置应断开。',style='Card.TLabel').pack(anchor='w',pady=(8,22))
         row=ttk.Frame(direction,style='Card.TFrame');row.pack(fill='x')
         ttk.Button(row,text='开始',command=lambda:self.reverser_command('RBEGIN')).pack(side='left',padx=(0,8))
@@ -116,7 +116,7 @@ class App:
         ttk.Button(row,text='保存',command=lambda:self.reverser_command('RSAVE')).pack(side='left',padx=4)
         ttk.Button(row,text='取消',command=lambda:self.reverser_command('RCANCEL')).pack(side='left',padx=4)
         ttk.Label(direction,textvariable=self.rev_text,style='Card.TLabel',wraplength=820).pack(anchor='w',pady=20)
-        ttk.Label(keys,text='03  指定四个实体按钮',font=('Microsoft YaHei UI',15,'bold'),style='Card.TLabel').pack(anchor='w')
+        ttk.Label(keys,text='03  指定四个实体按钮',style='CardSection.TLabel').pack(anchor='w')
         ttk.Label(keys,text='按住想用作目标按键的按钮，再点击采集。每个按钮只能分配一次。',style='Card.TLabel',wraplength=820).pack(anchor='w',pady=(8,16))
         strip,self.key_labels=button_strip(keys);strip.pack(anchor='w',pady=(0,16))
         row=ttk.Frame(keys,style='Card.TFrame');row.pack(fill='x')
@@ -132,7 +132,9 @@ class App:
         for name in 'ABXY':self.button_table.insert('','end',iid=name,values=(name,'—','—'))
         self.button_table.pack(fill='x')
         ttk.Button(logs,text='读取设备配置',command=lambda:self.command('SCAN')).pack(anchor='w',pady=(0,10))
-        self.logbox=tk.Text(logs,height=10,font=('Consolas',10),bg=INK,fg='#DCE6F6',relief='flat',padx=12,pady=12)
+        style = ttk.Style(root)
+        self.logbox=tk.Text(logs,height=10,font=('Consolas',10),bg=style.lookup('TLabel','background'),
+                            fg=style.lookup('TLabel','foreground'),relief='flat',padx=12,pady=12)
         self.logbox.pack(fill='both',expand=True)
         if not calibration_only:
             drive=ttk.Frame(tabs,padding=20,style='Card.TFrame');tabs.add(drive,text='手动输出')

@@ -1,4 +1,5 @@
 """Settings and the 8 × 8 pattern editor."""
+from decimal import Decimal, InvalidOperation
 import queue
 import re
 import threading
@@ -8,12 +9,15 @@ import webbrowser
 
 from button_mapping import BUTTONS, TARGET_LABELS
 from serial_protocol import NOTCH_ORDER
+from ui_theme import FONT, style_window
 from update_check import VERSION, RELEASES, check_update
 
+DEFAULT_THEME = '列车终端'
 THEMES = {
-    '经典浅色': ('#F3F6FC', '#FFFFFF', '#14243B', '#53647C', '#2563EB', '#EDF2FA', '#16846A', '#B37412', '#D34C5E'),
-    '绿色': ('#EAF5EE', '#FFFFFF', '#123527', '#496858', '#147352', '#DBEEE2', '#147352', '#88560F', '#B5334B'),
-    '深色': ('#101722', '#1B2635', '#F1F5FC', '#B0BDD0', '#3463C3', '#2B394C', '#65D5A5', '#F4C06A', '#FF8797'),
+    DEFAULT_THEME: ('#1B1D1E', '#242728', '#E9EDEA', '#ADB6B2', '#23684D', '#191C1D', '#81CFAB', '#DAB477', '#F08D91'),
+    '经典浅色': ('#F3F5F4', '#FFFFFF', '#202825', '#55645D', '#23684D', '#E9EEEB', '#216649', '#83550F', '#AC3544'),
+    '绿色': ('#1A211D', '#242D27', '#E9F0EB', '#ACBDB2', '#276B4D', '#181F1A', '#8AD3AC', '#DAB477', '#F08D91'),
+    '深色': ('#151617', '#1E2021', '#ECEFEE', '#AAB4B0', '#245F4A', '#141617', '#81CFAB', '#DAB477', '#F08D91'),
 }
 DEFAULT_LED = dict(enabled=True, brightness=2, rotation=3, patterns={})
 DEFAULT_PORT = 8765
@@ -43,30 +47,39 @@ class SettingsWindow:
         self.app = app
         self.window = tk.Toplevel(app.root)
         self.window.title('软件设置')
-        self.window.geometry('620x610')
+        self.window.geometry('740x560')
+        self.window.minsize(720, 550)
         self.window.transient(app.root)
-        self.window.configure(bg=THEMES[app.theme][0])
-        tabs = ttk.Notebook(self.window)
-        tabs.pack(fill='both', expand=True, padx=14, pady=14)
-        general = ttk.Frame(tabs, padding=18)
-        matrix = ttk.Frame(tabs, padding=18)
-        tabs.add(general, text='常规与更新')
-        tabs.add(matrix, text='LED 点阵')
-        buttons = ttk.Frame(tabs, padding=18)
-        tabs.add(buttons, text='按键映射')
-        odoriko = ttk.Frame(tabs, padding=18)
-        tabs.add(odoriko, text='N 比例模块')
-        hardware = ttk.Frame(tabs, padding=18)
-        tabs.add(hardware, text='硬件与固件')
-        app.updater.add_controls(hardware)
-        self.general(general)
-        self.matrix(matrix)
-        self.buttons(buttons)
-        self.odoriko(odoriko)
+        style_window(self.window, THEMES[app.theme][0])
+        menu = ttk.Frame(self.window, padding=(16, 18, 12, 18))
+        menu.pack(side='left', fill='y')
+        ttk.Frame(self.window, width=1, style='Divider.TFrame').pack(side='left', fill='y', pady=18)
+        content = ttk.Frame(self.window, padding=(18, 18, 20, 18))
+        content.pack(side='left', fill='both', expand=True)
+        self.sections = {}
+        for name, build in (('常规与更新', self.general), ('LED 点阵', self.matrix),
+                            ('按键映射', self.buttons), ('模型驾驶', self.odoriko),
+                            ('硬件与固件', app.updater.add_controls)):
+            button = ttk.Button(menu, text=name, width=13,
+                                command=lambda name=name: self.select(name))
+            button.pack(fill='x', pady=(0, 6))
+            page = ttk.Frame(content)
+            build(page)
+            self.sections[name] = (button, page)
+        self.select('常规与更新')
+
+    def select(self, name):
+        for label, (button, page) in self.sections.items():
+            if label == name:
+                button.configure(style='PanelAccent.TButton')
+                page.pack(fill='both', expand=True)
+            else:
+                button.configure(style='Panel.TButton')
+                page.pack_forget()
 
     def odoriko(self, parent):
-        ttk.Label(parent, text='Odoriko 速度参数', style='Section.TLabel').pack(anchor='w')
-        ttk.Label(parent, text='数值越大，变化越快。范围 1–255，单位为每秒 PWM 计数。P/B 档再乘档位号。模型模式下请将两柄置 N 后保存。',
+        ttk.Label(parent, text='模型驾驶', style='Section.TLabel').pack(anchor='w')
+        ttk.Label(parent, text='加速、滑行和制动的数值越大，速度变化越快。修改前先读取当前设定，保存时把两个手柄都放回 N。',
                   wraplength=510, justify='left').pack(anchor='w', pady=(6, 14))
         self.odoriko_fields = {}
         for key, label in (('accel', 'P 档加速'), ('coast', 'N 档滑行掉速'), ('brake', 'B 档减速')):
@@ -75,7 +88,16 @@ class SettingsWindow:
             ttk.Label(row, text=label, width=18).pack(side='left')
             field = self.odoriko_fields[key] = tk.StringVar()
             ttk.Entry(row, textvariable=field, width=8).pack(side='left')
-        self.odoriko_status = tk.StringVar(value='连接 Hidari 2 后，先读取设备当前参数。')
+        row = ttk.Frame(parent)
+        row.pack(fill='x', pady=4)
+        ttk.Label(row, text='最低输出电压', width=18).pack(side='left')
+        self.minimum_voltage = tk.StringVar()
+        self.minimum_entry = ttk.Entry(row, textvariable=self.minimum_voltage, width=8, state='disabled')
+        self.minimum_entry.pack(side='left')
+        ttk.Label(row, text='V').pack(side='left', padx=6)
+        ttk.Label(parent, text='设为 0 时从零起步。如果小车低速时不动，可以略微调高。停车时输出仍会归零。',
+                  style='Muted.TLabel', wraplength=495, justify='left').pack(anchor='w', pady=(6, 0))
+        self.odoriko_status = tk.StringVar(value='连接 Hidari 2 后，先点击「读取」。')
         self.odoriko_pending = None
         actions = ttk.Frame(parent)
         actions.pack(anchor='w', pady=(16, 8))
@@ -92,6 +114,19 @@ class SettingsWindow:
         except ValueError:
             self.odoriko_status.set('三项参数都须为 1–255 的整数。')
             return
+        sample = self.app.gate.sample
+        if sample and sample.model_duty is not None:
+            try:
+                volts = Decimal(self.minimum_voltage.get().strip())
+                if not volts.is_finite() or not 0 <= volts <= 12:
+                    raise ValueError
+                centivolts = volts * 100
+                if centivolts != int(centivolts):
+                    raise ValueError
+            except (InvalidOperation, ValueError):
+                self.odoriko_status.set('最低电压请输入 0–12 V，最多两位小数。')
+                return
+            values.append(int(centivolts))
         self.send_odoriko('ODSET ' + ' '.join(map(str, values)))
 
     def send_odoriko(self, command):
@@ -116,6 +151,12 @@ class SettingsWindow:
             self.odoriko_pending = None
             self.odoriko_status.set(status)
 
+    def disconnect_odoriko(self):
+        self.finish_odoriko('控制器已断开。')
+        self.minimum_voltage.set('')
+        self.minimum_entry.configure(state='disabled')
+        self.odoriko_status.set('重新连接后，点击「读取」。')
+
     def odoriko_response(self, response):
         if self.odoriko_pending is None:
             return
@@ -124,10 +165,18 @@ class SettingsWindow:
             if all(type(value) is int and 1 <= value <= 255 for value in values):
                 for field, value in zip(self.odoriko_fields.values(), values):
                     field.set(str(value))
-                self.finish_odoriko('已保存到控制器。' if response.get('saved') is True else '已读回控制器参数。')
+                minimum = response.get('minimum_cv')
+                supported = type(minimum) is int and 0 <= minimum <= 1200
+                self.minimum_voltage.set(f'{minimum / 100:.2f}' if supported else '')
+                self.minimum_entry.configure(state='normal' if supported else 'disabled')
+                message = '已保存到控制器。' if response.get('saved') is True else '已读取当前设定。'
+                if not supported:
+                    message += ' 设置最低电压需要 Hidari 2 固件 1.2.5 或更新版本。'
+                self.finish_odoriko(message)
         elif response.get('type') == 'ack':
             errors = {'error_odoriko_neutral': '请将主手柄和换向器都置 N，再保存。',
                       'error_odoriko_rates': '控制器拒绝了参数，请检查数值范围。',
+                      'error_odoriko_voltage': '控制器拒绝了最低电压，请输入 0–12 V。',
                       'error_odoriko_save': '控制器保存失败，请重试。'}
             error = errors.get(response.get('message'))
             if error:
@@ -178,7 +227,7 @@ class SettingsWindow:
         def change_theme(event):
             if self.app.save_preferences(theme=theme.get()):
                 self.app.set_theme(theme.get())
-                self.window.configure(bg=THEMES[self.app.theme][0])
+                style_window(self.window, THEMES[self.app.theme][0])
             else:
                 theme.set(self.app.theme)
 
@@ -221,7 +270,7 @@ class SettingsWindow:
         api_feedback.pack(anchor='w')
         ttk.Label(parent, text='只接受本机读取。返回档位、F/N/R、按键位掩码及数据有效性。',
                   wraplength=540, style='Muted.TLabel').pack(anchor='w', pady=(2, 18))
-        ttk.Separator(parent).pack(fill='x', pady=(0, 14))
+        ttk.Frame(parent, height=1, style='Divider.TFrame').pack(fill='x', pady=(0, 14))
         ttk.Label(parent, text=f'软件更新 · 当前版本 {VERSION}', style='Section.TLabel').pack(anchor='w')
         self.update_status = ttk.Label(parent, wraplength=540, style='Muted.TLabel')
         self.update_status.pack(anchor='w', pady=8)
@@ -287,7 +336,7 @@ class SettingsWindow:
             frame = bytes.fromhex(self.patterns.get(notch.get(), '0' * 16))
             for i, button in enumerate(pixels):
                 lit = frame[i // 8] & (0x80 >> (i % 8))
-                button.configure(bg='#16846A' if lit else '#26374D')
+                button.configure(bg='#468C6C' if lit else '#303735')
             pattern_status.configure(text='正在编辑自定义图案' if notch.get() in self.patterns else
                                      '此档使用固件默认图案。首次点击从空白开始绘制。')
 
@@ -299,8 +348,9 @@ class SettingsWindow:
             redraw()
 
         for i in range(64):
-            button = tk.Button(grid, width=2, height=1, relief='flat',
-                               activebackground='#35A889', command=lambda i=i: toggle(i))
+            button = tk.Button(grid, width=2, height=1, relief='flat', borderwidth=0,
+                               pady=0, font=(FONT, 10), activebackground='#588E75',
+                               command=lambda i=i: toggle(i))
             button.grid(row=i // 8, column=i % 8, padx=1, pady=1)
             pixels.append(button)
         notch.bind('<<ComboboxSelected>>', lambda event: redraw())

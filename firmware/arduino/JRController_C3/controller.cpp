@@ -96,7 +96,7 @@ Calibration saved{}, pending{};
 uint16_t captured = 0, rawAdc = 0, filtered = 0;
 #ifndef JR_FIRMWARE_VERSION
 #ifdef JR_HIDARI_2
-#define JR_FIRMWARE_VERSION 1.2.4
+#define JR_FIRMWARE_VERSION 1.2.5
 #else
 #define JR_FIRMWARE_VERSION 1.1.0
 #endif
@@ -143,8 +143,8 @@ void ack(const char *message) {
 #ifdef JR_HIDARI_2
 void reportOdorikoRates(bool saved) {
     const auto &rates = odoriko.rates;
-    Serial.printf("{\"v\":1,\"type\":\"odoriko_config\",\"accel\":%u,\"coast\":%u,\"brake\":%u,\"saved\":%s}\n",
-                  rates.accel, rates.coast, rates.brake, saved ? "true" : "false");
+    Serial.printf("{\"v\":1,\"type\":\"odoriko_config\",\"accel\":%u,\"coast\":%u,\"brake\":%u,\"minimum_cv\":%u,\"saved\":%s}\n",
+                  rates.accel, rates.coast, rates.brake, rates.minimumCv, saved ? "true" : "false");
 }
 
 void saveOdorikoRates(const char *payload) {
@@ -154,7 +154,7 @@ void saveOdorikoRates(const char *payload) {
         ack("error_odoriko_neutral");
         return;
     }
-    OdorikoRates next;
+    OdorikoRates next = odoriko.rates;
     for (auto field : {&next.accel, &next.coast, &next.brake}) {
         if (*payload < '0' || *payload > '9') { ack("error_odoriko_rates"); return; }
         char *end = nullptr;
@@ -166,7 +166,15 @@ void saveOdorikoRates(const char *payload) {
         payload = end;
         while (*payload == ' ') ++payload;
     }
-    if (*payload) { ack("error_odoriko_rates"); return; }
+    // The original three-argument command leaves the minimum unchanged.
+    if (*payload) {
+        char *end = nullptr;
+        const unsigned long value = strtoul(payload, &end, 10);
+        if (*payload < '0' || *payload > '9' || *end || value > ODORIKO_FULL_SCALE_CV) {
+            ack("error_odoriko_voltage"); return;
+        }
+        next.minimumCv = uint16_t(value);
+    }
     if (!prefs.begin("jr-odoriko", false)) { ack("error_odoriko_save"); return; }
     const size_t written = prefs.putBytes("rates", &next, sizeof(next));
     prefs.end();
@@ -421,8 +429,9 @@ void setup() {
     Serial.setTxTimeoutMs(5);
     if (prefs.begin("jr-odoriko", true)) {
         OdorikoRates stored;
-        if (prefs.getBytesLength("rates") == sizeof(stored) &&
-            prefs.getBytes("rates", &stored, sizeof(stored)) == sizeof(stored) &&
+        const size_t size = prefs.getBytesLength("rates");
+        if ((size == sizeof(stored) || size == 3 * sizeof(uint16_t)) &&
+            prefs.getBytes("rates", &stored, size) == size &&
             validOdorikoRates(stored)) odoriko.rates = stored;
         prefs.end();
     }
@@ -559,7 +568,9 @@ void loop() {
                       inputsValid ? mappedButtons(inputsStable>>2,buttonMap) : 0);
 #endif
 #ifdef JR_HIDARI_2
-        Serial.printf(",\"inputs_ok\":%s,\"mode\":\"%s\"", inputsValid ? "true" : "false", odoriko.mode());
+        Serial.printf(",\"inputs_ok\":%s,\"mode\":\"%s\",\"model_duty\":%u",
+                      inputsValid ? "true" : "false", odoriko.mode(),
+                      odoriko.direction() == 'N' ? 0 : odoriko.duty());
 #endif
 #endif
         Serial.printf(",\"led_config\":true,\"model\":\"%s\",\"firmware\":\"%s\",\"device_id\":\"%s\"}\n",
