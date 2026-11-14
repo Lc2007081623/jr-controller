@@ -96,7 +96,7 @@ Calibration saved{}, pending{};
 uint16_t captured = 0, rawAdc = 0, filtered = 0;
 #ifndef JR_FIRMWARE_VERSION
 #ifdef JR_HIDARI_2
-#define JR_FIRMWARE_VERSION 1.2.5
+#define JR_FIRMWARE_VERSION 1.2.7
 #else
 #define JR_FIRMWARE_VERSION 1.1.0
 #endif
@@ -143,14 +143,14 @@ void ack(const char *message) {
 #ifdef JR_HIDARI_2
 void reportOdorikoRates(bool saved) {
     const auto &rates = odoriko.rates;
-    Serial.printf("{\"v\":1,\"type\":\"odoriko_config\",\"accel\":%u,\"coast\":%u,\"brake\":%u,\"minimum_cv\":%u,\"saved\":%s}\n",
-                  rates.accel, rates.coast, rates.brake, rates.minimumCv, saved ? "true" : "false");
+    Serial.printf("{\"v\":1,\"type\":\"odoriko_config\",\"accel\":%u,\"coast\":%u,\"brake\":%u,\"minimum_cv\":%u,\"eb_flags\":%u,\"saved\":%s}\n",
+                  rates.accel, rates.coast, rates.brake, rates.minimumCv, rates.ebFlags, saved ? "true" : "false");
 }
 
 void saveOdorikoRates(const char *payload) {
-    if (!odoriko.pcOutput() && (odoriko.direction() != 'N' || notch != Odoriko::NEUTRAL ||
-                               !inputsValid || inputsRaw < 0 || (inputsRaw & 3) ||
-                               (inputsStable & 3) || !positionValid)) {
+    if (odoriko.direction() != 'N' || notch != Odoriko::NEUTRAL ||
+        !inputsValid || inputsRaw < 0 || (inputsRaw & 3) || (inputsStable & 3) ||
+        !positionValid || sensorFaultPending || collecting || reverserCollecting || buttonCollecting) {
         ack("error_odoriko_neutral");
         return;
     }
@@ -170,10 +170,19 @@ void saveOdorikoRates(const char *payload) {
     if (*payload) {
         char *end = nullptr;
         const unsigned long value = strtoul(payload, &end, 10);
-        if (*payload < '0' || *payload > '9' || *end || value > ODORIKO_FULL_SCALE_CV) {
+        if (*payload < '0' || *payload > '9' || (*end != ' ' && *end != '\0') ||
+            value > ODORIKO_FULL_SCALE_CV) {
             ack("error_odoriko_voltage"); return;
         }
         next.minimumCv = uint16_t(value);
+        payload = end;
+        while (*payload == ' ') ++payload;
+        if (*payload) {
+            if (*payload < '0' || *payload > '3' || payload[1] != '\0') {
+                ack("error_odoriko_eb"); return;
+            }
+            next.ebFlags = uint16_t(*payload - '0');
+        }
     }
     if (!prefs.begin("jr-odoriko", false)) { ack("error_odoriko_save"); return; }
     const size_t written = prefs.putBytes("rates", &next, sizeof(next));
@@ -430,7 +439,7 @@ void setup() {
     if (prefs.begin("jr-odoriko", true)) {
         OdorikoRates stored;
         const size_t size = prefs.getBytesLength("rates");
-        if ((size == sizeof(stored) || size == 3 * sizeof(uint16_t)) &&
+        if ((size == sizeof(stored) || size == 4 * sizeof(uint16_t) || size == 3 * sizeof(uint16_t)) &&
             prefs.getBytes("rates", &stored, size) == size &&
             validOdorikoRates(stored)) odoriko.rates = stored;
         prefs.end();

@@ -2,9 +2,9 @@
 
 ESP32-S3 / ESP32-C3 + AS5600 的 JR EAST Train Simulator 单手柄控制器项目，保留第一版电位器方案。
 
-当前桌面版本为 **1.1.5**，详见[版本记录](CHANGELOG.md)。Hidari 2 的 Odoriko 参数可在「设定 → 模型驾驶」读取和保存。
+当前桌面版本为 **1.1.6**，详见[版本记录](CHANGELOG.md)。Hidari 2 的 Odoriko 参数和 EB 行为可在「设定 → 模型驾驶」读取和保存。
 
-[下载安装包（v1.1.5）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.1.5)。[Hidari 2 与 Odoriko 客户说明书](https://github.com/Lc2007081623/jr-controller/releases/download/v1.1.4/Hidari2-Odoriko-User-Manual.pdf)含 LED 点阵速查表。配套的 `SHA256SUMS.txt` 可用于核对发布文件。
+[下载安装包（v1.1.6）](https://github.com/Lc2007081623/jr-controller/releases/tag/v1.1.6)。[Hidari 2 与 Odoriko 客户说明书](https://github.com/Lc2007081623/jr-controller/releases/download/v1.1.4/Hidari2-Odoriko-User-Manual.pdf)含 LED 点阵速查表。配套的 `SHA256SUMS.txt` 可用于核对发布文件。
 
 在“软件设置”中可以切换主题、查询 GitHub 更新、映射四个实体按键、编辑点阵并开启本机只读 HTTP 接口。游戏模式右侧提供对应的接入步骤。软件显示所连接的板型、传感器与固件版本，并按设备型号匹配内置的 hidari1 或 hidari2 固件。多型号更新流程已通过软件校验，实机刷写尚待验证。
 

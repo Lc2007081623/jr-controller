@@ -95,8 +95,18 @@ class SettingsWindow:
         self.minimum_entry = ttk.Entry(row, textvariable=self.minimum_voltage, width=8, state='disabled')
         self.minimum_entry.pack(side='left')
         ttk.Label(row, text='V').pack(side='left', padx=6)
-        ttk.Label(parent, text='设为 0 时从零起步。如果小车低速时不动，可以略微调高。停车时输出仍会归零。',
+        ttk.Label(parent, text='Hidari 2 固件 1.2.6 起，换向器在 F 或 R 时维持设定的最低电压。拨回 N 时输出归零。',
                   style='Muted.TLabel', wraplength=495, justify='left').pack(anchor='w', pady=(6, 0))
+        row = ttk.Frame(parent)
+        row.pack(fill='x', pady=(8, 4))
+        ttk.Label(row, text='紧急制动（EB）输出', width=18).pack(side='left')
+        self.eb_output = ttk.Combobox(row, values=('归零', '降至最低电压'), width=14, state='disabled')
+        self.eb_output.current(0)
+        self.eb_output.pack(side='left')
+        self.eb_require_neutral = tk.BooleanVar(value=True)
+        self.eb_neutral_check = ttk.Checkbutton(parent, text='解除 EB 前必须将主手柄拨回 N',
+                                                variable=self.eb_require_neutral, state='disabled')
+        self.eb_neutral_check.pack(anchor='w', pady=(4, 0))
         self.odoriko_status = tk.StringVar(value='连接 Hidari 2 后，先点击「读取」。')
         self.odoriko_pending = None
         actions = ttk.Frame(parent)
@@ -127,6 +137,8 @@ class SettingsWindow:
                 self.odoriko_status.set('最低电压请输入 0–12 V，最多两位小数。')
                 return
             values.append(int(centivolts))
+            if not self.eb_output.instate(['disabled']):
+                values.append(self.eb_output.current() | (0 if self.eb_require_neutral.get() else 2))
         self.send_odoriko('ODSET ' + ' '.join(map(str, values)))
 
     def send_odoriko(self, command):
@@ -155,7 +167,17 @@ class SettingsWindow:
         self.finish_odoriko('控制器已断开。')
         self.minimum_voltage.set('')
         self.minimum_entry.configure(state='disabled')
+        self.set_eb_options(None)
         self.odoriko_status.set('重新连接后，点击「读取」。')
+
+    def set_eb_options(self, flags):
+        supported = type(flags) is int and 0 <= flags <= 3
+        flags = flags if supported else 0
+        self.eb_output.current(flags & 1)
+        self.eb_require_neutral.set(not (flags & 2))
+        self.eb_output.configure(state='readonly' if supported else 'disabled')
+        self.eb_neutral_check.configure(state='normal' if supported else 'disabled')
+        return supported
 
     def odoriko_response(self, response):
         if self.odoriko_pending is None:
@@ -169,14 +191,18 @@ class SettingsWindow:
                 supported = type(minimum) is int and 0 <= minimum <= 1200
                 self.minimum_voltage.set(f'{minimum / 100:.2f}' if supported else '')
                 self.minimum_entry.configure(state='normal' if supported else 'disabled')
+                eb_supported = self.set_eb_options(response.get('eb_flags'))
                 message = '已保存到控制器。' if response.get('saved') is True else '已读取当前设定。'
                 if not supported:
                     message += ' 设置最低电压需要 Hidari 2 固件 1.2.5 或更新版本。'
+                elif not eb_supported:
+                    message += ' 设置 EB 需要 Hidari 2 固件 1.2.7 或更新版本。'
                 self.finish_odoriko(message)
         elif response.get('type') == 'ack':
             errors = {'error_odoriko_neutral': '请将主手柄和换向器都置 N，再保存。',
                       'error_odoriko_rates': '控制器拒绝了参数，请检查数值范围。',
                       'error_odoriko_voltage': '控制器拒绝了最低电压，请输入 0–12 V。',
+                      'error_odoriko_eb': '控制器拒绝了 EB 设置，请重新读取后重试。',
                       'error_odoriko_save': '控制器保存失败，请重试。'}
             error = errors.get(response.get('message'))
             if error:

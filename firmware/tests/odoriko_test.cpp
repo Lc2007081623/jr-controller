@@ -42,10 +42,11 @@ int main() {
     control.update(1850, n + 5, 'F', true, 0);
     control.update(1860, n + 5, 'F', false, 0);
     assert(control.direction() == 'N' && control.duty() == 0);
-    control.update(1870, n, 'R', true, 0);
+    control.update(1870, n + 5, 'R', true, 0);
+    assert(control.direction() == 'R' && control.duty() == 0);
+    control.update(1880, n + 5, 'N', true, 0);
     assert(control.direction() == 'N' && control.duty() == 0);
-    control.update(1880, n, 'N', true, 0);
-    control.update(1890, n, 'R', true, 0);
+    control.update(1890, n + 5, 'R', true, 0);
     control.update(1990, n + 5, 'R', true, 0);
     assert(control.direction() == 'R' && control.duty() == 15);
     control.update(2000, 0, 'R', true, 0);
@@ -62,10 +63,8 @@ int main() {
     control.update(6300, n, 'N', true, 0);
     control.update(6400, n + 5, 'R', true, 0);
     assert(control.duty() == 0);
-    control.update(6450, n, 'N', true, 0);
-    control.update(6500, n, 'N', true, 4);
-    control.update(6550, n, 'N', true, 0);
-    control.update(6600, n, 'R', true, 0);
+    control.update(6500, n + 5, 'R', true, 4);
+    control.update(6600, n + 5, 'R', true, 0);
     control.update(6700, n + 5, 'R', true, 0);
     assert(control.direction() == 'R' && control.duty() == 15);
     control.update(6750, n + 5, 'R', true, 8);
@@ -108,11 +107,50 @@ int main() {
     remapped.update(1540, 0, 'F', true, 0);
     assert(remapped.duty() == 0);
     remapped.update(1550, n, 'F', true, 0);
+    assert(remapped.duty() == 51);
+    remapped.update(1551, n - 2, 'R', true, 0);
+    assert(remapped.direction() == 'R' && remapped.duty() == 51);
+    remapped.update(1552, n - 2, 'N', true, 0);
+    assert(remapped.direction() == 'N' && remapped.duty() == 0);
+    remapped.update(1553, n - 2, 'F', true, 0);
+    assert(remapped.direction() == 'F' && remapped.duty() == 51);
     remapped.update(1560, n + 5, 'F', true, mappedButtons(2, calibratedMap));
     remapped.update(1660, n + 5, 'F', true, mappedButtons(2, calibratedMap));
     assert(remapped.duty() == 0);
     remapped.rates.coast = 256;
     assert(!validOdorikoRates(remapped.rates));
+
+    Odoriko eb;
+    eb.update(0, n, 'N', true, 9);
+    eb.update(1000, n, 'N', true, 9);
+    eb.update(1010, n, 'N', true, 0);
+    eb.update(1020, n, 'N', true, 2);
+    eb.update(1030, n, 'N', true, 4);
+    eb.update(1040, n, 'N', true, 0);
+    eb.rates.minimumCv = 240;
+    uint32_t tick = 1100;
+    for (uint16_t flags = 0; flags <= 3; ++flags) {
+        eb.rates.ebFlags = flags;
+        assert(validOdorikoRates(eb.rates));
+        const int ebDuty = flags & EB_MINIMUM_VOLTAGE ? 51 : 0;
+        eb.update(tick, 0, 'F', true, 0);
+        assert(eb.duty() == ebDuty);
+        eb.update(tick + 5, 0, 'N', true, 0);
+        assert(eb.duty() == 0);
+        eb.update(tick + 10, 0, 'R', true, 0);
+        assert(eb.duty() == ebDuty);
+        eb.update(tick + 110, n + 5, 'R', true, 0);
+        if (flags & EB_RELEASE_WITHOUT_NEUTRAL) {
+            assert(eb.duty() > 51 && !eb.display(n + 5, 'R'));
+        } else {
+            assert(eb.duty() == ebDuty && strcmp(eb.display(n + 5, 'R'), "Hn") == 0);
+        }
+        eb.update(tick + 120, n, 'R', true, 0);
+        assert(eb.duty() >= 51);
+        tick += 200;
+    }
+    eb.rates.ebFlags = 4;
+    assert(!validOdorikoRates(eb.rates));
 
     Odoriko prompt;
     prompt.update(100, n + 1, 'F', true, 8);
